@@ -1,8 +1,8 @@
 ![1761602550045](image/README/1761602550045.png)
 
-# A fully(not) working of Myau Client (OpenMyau-based sometime october commit) on NotEnoughUpdates 2.6.0
+# A fully(not) working shim/impl of OpenMyau Client (OpenMyau-based sometime october commit) on NotEnoughUpdates 2.6.0
 
-## I do not condone cracking Myau, however basically the entire codebase was pure-java no external packages so it was REALLY easy to paste + better then a random Raven version xD
+## I do not condone cracking Myau, however basically the entire codebase was pure-java & no external packages so it was REALLY easy to paste + better then a random Raven version xD
 
 The way it works in lunar is simple
 Lunar allows 3rd party mod replacements in their 1.8.9 "forge" version see [here](https://support.lunarclient.com/support/solutions/articles/60000752051-third-party-mods) - if you shim in your own code (in this case what I called CoffeeClient) lunar will still load it since it contains the main NotEnoughUpdates classes
