@@ -1,0 +1,110 @@
+{
+  "mithril.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "mithrilbreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneTopaz.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstonetopazbreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneRuby.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstonerubybreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneAmber.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstoneamberbreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneAmethyst.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstoneamethystbreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneSapphire.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstonesapphirebreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneJade.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstonejadebreak",
+        "stream": false
+      }
+    ]
+  },
+  "gemstoneJasper.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "gemstonejasperbreak",
+        "stream": false
+      }
+    ]
+  },
+  "titanium.break": {
+    "category": "block",
+    "sounds": [
+      {
+        "name": "titaniumbreak",
+        "stream": false
+      }
+    ]
+  },
+  "calendar_notif_jingle": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "jingle",
+        "stream": false
+      }
+    ]
+  },
+  "calendar_notif_in": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "in",
+        "stream": false
+      }
+    ]
+  },
+  "calendar_notif_out": {
+    "category": "master",
+    "sounds": [
+      {
+        "name": "out",
+        "stream": false
+      }
+    ]
+  }
+}

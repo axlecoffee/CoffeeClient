@@ -1,0 +1,38 @@
+/*
+ * Copyright (C) 2025 CoffeeClient contributors
+ *
+ * This file is part of CoffeeClient addon for NotEnoughUpdates.
+ */
+
+package io.github.moulberry.notenoughupdates.coffeeclient.util;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+
+public class ChatUtil {
+
+	private static final Minecraft mc = Minecraft.getMinecraft();
+
+	public static String formatColor(String text) {
+		return text.replace("&", "§");
+	}
+
+	public static void send(ChatComponentText text) {
+		if (mc.thePlayer != null) {
+			mc.thePlayer.addChatMessage(text);
+		}
+	}
+
+	public static void sendFormatted(String text) {
+		send(new ChatComponentText(formatColor(text)));
+	}
+
+	public static void sendRaw(String text) {
+		send(new ChatComponentText(text));
+	}
+
+	public static void sendMessage(String message) {
+		sendFormatted("&7[&bCoffeeClient&7]&r " + message);
+	}
+}
