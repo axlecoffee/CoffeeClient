@@ -77,7 +77,7 @@ public class InvWalkModule extends Module {
         if (!isEnabled()) {
             return;
         }
-        
+
         // Process click queue (equivalent to original's onTick)
         while (!this.clickQueue.isEmpty()) {
             PacketUtil.sendPacketNoEvent(this.clickQueue.poll());
