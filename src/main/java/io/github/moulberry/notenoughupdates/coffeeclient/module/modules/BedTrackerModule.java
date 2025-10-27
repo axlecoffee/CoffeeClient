@@ -247,7 +247,7 @@ public class BedTrackerModule extends Module {
                             String.format(
                                     "&7[&bCoffeeClient&7] &fBedTracker: &fRunning &6%s&r",
                                     marcoText.getValue())));
-            ChatUtil.sendMessage(marcoText.getValue());
+            ChatUtil.sendChatMessage(marcoText.getValue());
         }
     }
 

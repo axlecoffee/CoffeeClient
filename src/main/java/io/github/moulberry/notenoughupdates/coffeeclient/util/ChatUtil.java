@@ -8,11 +8,16 @@ package io.github.moulberry.notenoughupdates.coffeeclient.util;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
 
 public class ChatUtil {
 
 	private static final Minecraft mc = Minecraft.getMinecraft();
+
+	public static void sendChatMessage(String message) {
+		if (mc.thePlayer != null) {
+			mc.thePlayer.sendChatMessage(message);
+		}
+	}
 
 	public static String formatColor(String text) {
 		return text.replace("&", "§");
