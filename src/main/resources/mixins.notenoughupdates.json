@@ -6,6 +6,10 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "AccessorBooleanState",
+    "IAccessorC0DPacketCloseWindow",
+    "IAccessorEntity",
+    "IAccessorMinecraft",
+    "MixinEntityLivingBase",
     "AccessorCommandHandler",
     "AccessorEntityAgeable",
     "AccessorEntityArmorStand",

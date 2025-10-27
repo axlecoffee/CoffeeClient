@@ -5,7 +5,6 @@ import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.*;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.ColorUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.TeamUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.entity.Entity;

@@ -19,6 +19,7 @@
 
 package io.github.moulberry.notenoughupdates.mixins;
 
+import io.github.moulberry.notenoughupdates.coffeeclient.events.PacketEvent;
 import io.github.moulberry.notenoughupdates.events.SpawnParticleEvent;
 import io.github.moulberry.notenoughupdates.miscfeatures.AntiCoopAdd;
 import io.github.moulberry.notenoughupdates.miscfeatures.CustomItemEffects;
@@ -43,6 +44,8 @@ import net.minecraft.network.play.server.S2FPacketSetSlot;
 import net.minecraft.network.play.server.S30PacketWindowItems;
 import net.minecraft.network.play.server.S47PacketPlayerListHeaderFooter;
 import net.minecraft.util.EnumParticleTypes;
+import net.minecraftforge.common.MinecraftForge;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -126,6 +129,12 @@ public class MixinNetHandlerPlayClient {
 
 	@Inject(method = "addToSendQueue", at = @At("HEAD"), cancellable = true)
 	public void addToSendQueue(Packet packet, CallbackInfo ci) {
+		PacketEvent packetEvent = new PacketEvent(packet, true);
+		MinecraftForge.EVENT_BUS.post(packetEvent);
+		if (packetEvent.isCanceled()) {
+			ci.cancel();
+			return;
+		}
 		if (packet instanceof C0EPacketClickWindow) {
 			StorageManager.getInstance().clientSendWindowClick((C0EPacketClickWindow) packet);
 		}

@@ -4,7 +4,6 @@ import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.BooleanProperty;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.IntProperty;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.RenderUtil;
-import io.github.moulberry.notenoughupdates.mixins.AccessorRenderManager;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;

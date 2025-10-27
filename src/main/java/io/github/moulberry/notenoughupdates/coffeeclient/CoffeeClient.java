@@ -26,6 +26,17 @@ import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.Indicato
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.NoJumpDelayModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.ChamsModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedTrackerModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AntiObfuscateModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AntiDebuffModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.FullBrightModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.FastPlaceModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AutoToolModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.EagleModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.WtapModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AutoClickerModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.InvWalkModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AimAssistModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.VelocityModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.Property;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.PropertyManager;
 import net.minecraftforge.common.MinecraftForge;
@@ -83,6 +94,19 @@ public class CoffeeClient {
 		moduleManager.registerModule(NoJumpDelayModule.class, new NoJumpDelayModule());
 		moduleManager.registerModule(ChamsModule.class, new ChamsModule());
 		moduleManager.registerModule(BedTrackerModule.class, new BedTrackerModule());
+
+		// OpenMyau ported modules
+		moduleManager.registerModule(AntiObfuscateModule.class, new AntiObfuscateModule());
+		moduleManager.registerModule(AntiDebuffModule.class, new AntiDebuffModule());
+		moduleManager.registerModule(FullBrightModule.class, new FullBrightModule());
+		moduleManager.registerModule(FastPlaceModule.class, new FastPlaceModule());
+		moduleManager.registerModule(AutoToolModule.class, new AutoToolModule());
+		moduleManager.registerModule(EagleModule.class, new EagleModule());
+		moduleManager.registerModule(WtapModule.class, new WtapModule());
+		moduleManager.registerModule(AutoClickerModule.class, new AutoClickerModule());
+		moduleManager.registerModule(InvWalkModule.class, new InvWalkModule());
+		moduleManager.registerModule(AimAssistModule.class, new AimAssistModule());
+		moduleManager.registerModule(VelocityModule.class, new VelocityModule());
 	}
 
 	private static void registerCommands() {

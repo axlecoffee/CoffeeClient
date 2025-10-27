@@ -6,7 +6,6 @@
 
 package io.github.moulberry.notenoughupdates.coffeeclient.module;
 
-import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
