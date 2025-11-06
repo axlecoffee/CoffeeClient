@@ -37,6 +37,7 @@ import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AutoClic
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.InvWalkModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AimAssistModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.VelocityModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.TrajectoriesModule;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.Property;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.PropertyManager;
 import net.minecraftforge.common.MinecraftForge;
@@ -48,7 +49,7 @@ import java.util.ArrayList;
 
 public class CoffeeClient {
 
-	public static final String CLIENT_NAME = "&7[&bCoffeeClient&7]&r ";
+	public static final String CLIENT_NAME = "&7[&bSchrodinger's Client&7]&r ";
 	public static final Logger LOGGER = LogManager.getLogger("CoffeeClient");
 
 	public static ModuleManager moduleManager;
@@ -107,6 +108,7 @@ public class CoffeeClient {
 		moduleManager.registerModule(InvWalkModule.class, new InvWalkModule());
 		moduleManager.registerModule(AimAssistModule.class, new AimAssistModule());
 		moduleManager.registerModule(VelocityModule.class, new VelocityModule());
+		moduleManager.registerModule(TrajectoriesModule.class, new TrajectoriesModule());
 	}
 
 	private static void registerCommands() {

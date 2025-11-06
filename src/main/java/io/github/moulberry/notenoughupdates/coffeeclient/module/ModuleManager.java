@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2025 CoffeeClient contributors
- *
- * This file is part of CoffeeClient addon for NotEnoughUpdates.
- */
-
 package io.github.moulberry.notenoughupdates.coffeeclient.module;
 
 import net.minecraftforge.common.MinecraftForge;

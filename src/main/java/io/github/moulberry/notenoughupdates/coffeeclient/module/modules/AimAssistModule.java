@@ -12,6 +12,8 @@ import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.Flo
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.IntProperty;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.RandomUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.RotationUtil;
+import io.github.moulberry.notenoughupdates.coffeeclient.util.TeamUtil;
+import io.github.moulberry.notenoughupdates.coffeeclient.util.ItemUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -35,6 +37,9 @@ public class AimAssistModule extends Module {
     public final BooleanProperty playersOnly = new BooleanProperty("players-only", true);
     public final BooleanProperty targetInvisible = new BooleanProperty("target-invisible", false);
     public final BooleanProperty ignoreTeammates = new BooleanProperty("ignore-teammates", true);
+    public final BooleanProperty weaponsOnly = new BooleanProperty("weapons-only", true);
+    public final BooleanProperty allowTools = new BooleanProperty("allow-tools", false);
+    public final BooleanProperty team = new BooleanProperty("teams", true);
 
     public AimAssistModule() {
         super("AimAssist", false);
@@ -44,6 +49,13 @@ public class AimAssistModule extends Module {
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null) {
             return;
+        }
+
+        // Check weapons-only restriction
+        if (weaponsOnly.getValue() && !ItemUtil.hasRawUnbreakingEnchant()) {
+            if (!allowTools.getValue() || !ItemUtil.isHoldingTool()) {
+                return;
+            }
         }
 
         if (event.phase == TickEvent.Phase.END) {
@@ -100,9 +112,21 @@ public class AimAssistModule extends Module {
                 continue;
             }
 
-            if (ignoreTeammates.getValue() && living instanceof EntityPlayer) {
+            if (living instanceof EntityPlayer) {
                 EntityPlayer player = (EntityPlayer) living;
-                if (mc.thePlayer.isOnSameTeam(player)) {
+
+                // Check teams setting
+                if (team.getValue() && TeamUtil.isSameTeam(player)) {
+                    continue;
+                }
+
+                // Legacy ignore teammates check
+                if (ignoreTeammates.getValue() && mc.thePlayer.isOnSameTeam(player)) {
+                    continue;
+                }
+
+                // Check for bots
+                if (TeamUtil.isBot(player)) {
                     continue;
                 }
             }
