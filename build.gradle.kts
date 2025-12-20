@@ -197,7 +197,7 @@ tasks.named("jar", Jar::class) {
 }
 
 tasks.withType(Jar::class) {
-	archiveBaseName.set("NEU-v1_8-2.6.0")
+	archiveBaseName.set("NotEnoughUpdates")
 	manifest.attributes.run {
 		this["Main-Class"] = "NotSkyblockAddonsInstallerFrame"
 		this["TweakClass"] = "io.github.moulberry.notenoughupdates.loader.NEUDelegatingTweaker"
@@ -247,7 +247,7 @@ tasks.shadowJar {
 	archiveClassifier.set("dep-dev")
 	configurations = listOf(shadowImplementation, shadowApi, shadowOnly)
 	destinationDirectory.set(badJars)
-	archiveBaseName.set("NEU-v1_8-2.6.0")
+	archiveBaseName.set("NotEnoughUpdates")
 	exclude("**/module-info.class", "LICENSE.txt")
 	dependencies {
 		exclude {
