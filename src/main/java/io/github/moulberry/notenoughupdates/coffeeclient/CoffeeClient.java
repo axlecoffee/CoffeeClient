@@ -49,7 +49,7 @@ import java.util.ArrayList;
 
 public class CoffeeClient {
 
-	public static final String CLIENT_NAME = "&7[&bSchrodinger's Client&7]&r ";
+	public static final String CLIENT_NAME = "&7[&bCoffeeClient&7]&r ";
 	public static final Logger LOGGER = LogManager.getLogger("CoffeeClient");
 
 	public static ModuleManager moduleManager;
