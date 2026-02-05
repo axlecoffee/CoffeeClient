@@ -109,6 +109,7 @@ public class CoffeeClient {
 		moduleManager.registerModule(AimAssistModule.class, new AimAssistModule());
 		moduleManager.registerModule(VelocityModule.class, new VelocityModule());
 		moduleManager.registerModule(TrajectoriesModule.class, new TrajectoriesModule());
+
 	}
 
 	private static void registerCommands() {

@@ -197,7 +197,8 @@ tasks.named("jar", Jar::class) {
 }
 
 tasks.withType(Jar::class) {
-	archiveBaseName.set("NotEnoughUpdates")
+	archiveBaseName.set("NEU-v1_8-2.6.0")
+	archiveVersion.set("")
 	manifest.attributes.run {
 		this["Main-Class"] = "NotSkyblockAddonsInstallerFrame"
 		this["TweakClass"] = "io.github.moulberry.notenoughupdates.loader.NEUDelegatingTweaker"
@@ -211,6 +212,8 @@ tasks.withType(Jar::class) {
 
 val remapJar by tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
 	archiveClassifier.set("")
+	archiveBaseName.set("NEU-v1_8-2.6.0")
+	archiveVersion.set("")
 	from(tasks.shadowJar)
 	input.set(tasks.shadowJar.get().archiveFile)
 	doLast {
@@ -247,7 +250,8 @@ tasks.shadowJar {
 	archiveClassifier.set("dep-dev")
 	configurations = listOf(shadowImplementation, shadowApi, shadowOnly)
 	destinationDirectory.set(badJars)
-	archiveBaseName.set("NotEnoughUpdates")
+	archiveBaseName.set("NEU-v1_8-2.6.0")
+	archiveVersion.set("")
 	exclude("**/module-info.class", "LICENSE.txt")
 	dependencies {
 		exclude {

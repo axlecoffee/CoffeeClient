@@ -35,12 +35,22 @@ public class RotationUtil {
 
     public static float[] getRotationsToBox(AxisAlignedBB boundingBox, float yaw, float pitch, float maxAngle,
             float smoothFactor) {
+        return getRotationsToBoxDynamic(boundingBox, yaw, pitch, maxAngle, smoothFactor, 0.5f);
+    }
+
+    /**
+     * Calculate rotations to a bounding box with dynamic vertical targeting.
+     * 
+     * @param verticalMultipoint 0.0 = top of hitbox (head), 1.0 = bottom of hitbox
+     *                           (feet), 0.5 = center
+     */
+    public static float[] getRotationsToBoxDynamic(AxisAlignedBB boundingBox, float yaw, float pitch, float maxAngle,
+            float smoothFactor, float verticalMultipoint) {
         Vec3 eyePos = mc.thePlayer.getPositionEyes(1.0f);
-        double minTargetY = boundingBox.minY + 0.05 * (boundingBox.maxY - boundingBox.minY);
-        double maxTargetY = boundingBox.minY + 0.75 * (boundingBox.maxY - boundingBox.minY);
+        double boxHeight = boundingBox.maxY - boundingBox.minY;
+        double targetY = boundingBox.maxY - (boxHeight * Math.max(0.05, Math.min(0.95, verticalMultipoint)));
         double deltaX = (boundingBox.minX + boundingBox.maxX) / 2.0 - eyePos.xCoord;
-        double deltaY = eyePos.yCoord >= maxTargetY ? maxTargetY - eyePos.yCoord
-                : (eyePos.yCoord <= minTargetY ? minTargetY - eyePos.yCoord : 0.0);
+        double deltaY = targetY - eyePos.yCoord;
         double deltaZ = (boundingBox.minZ + boundingBox.maxZ) / 2.0 - eyePos.zCoord;
         return getRotations(deltaX, deltaY, deltaZ, yaw, pitch, maxAngle, smoothFactor);
     }

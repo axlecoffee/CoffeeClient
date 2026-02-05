@@ -25,6 +25,7 @@ eclipse
 run
 .vscode
 infer-out/
+read-only-review/
 ciwork/
 .DS_STORE
 *.asc

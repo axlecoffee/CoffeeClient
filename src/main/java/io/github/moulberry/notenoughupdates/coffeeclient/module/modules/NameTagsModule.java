@@ -18,6 +18,7 @@ import net.minecraft.entity.passive.EntitySquid;
 import net.minecraft.entity.passive.EntityVillager;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.scoreboard.Score;
@@ -48,6 +49,7 @@ public class NameTagsModule extends Module {
     public final ModeProperty healthMode = new ModeProperty("health", 2,
             new String[] { "NONE", "HP", "HEARTS", "TAB" });
     public final BooleanProperty armor = new BooleanProperty("armor", true);
+    public final BooleanProperty enchants = new BooleanProperty("enchants", true, armor::getValue);
     public final BooleanProperty effects = new BooleanProperty("effects", true);
     public final BooleanProperty players = new BooleanProperty("players", true);
     public final BooleanProperty self = new BooleanProperty("self", false);
@@ -222,7 +224,29 @@ public class NameTagsModule extends Module {
                     if (!renderingItems.isEmpty()) {
                         int offset = renderingItems.size() * -8;
                         for (int i = 0; i < renderingItems.size(); i++) {
-                            renderItem(renderingItems.get(i), offset + i * 16, -yOffset - 16);
+                            ItemStack itemStack = renderingItems.get(i);
+                            int itemX = offset + i * 16;
+                            renderItem(itemStack, itemX, -yOffset - 16);
+
+                            if (enchants.getValue()) {
+                                int enchantCount = getEnchantmentCount(itemStack);
+                                if (enchantCount != 0) {
+                                    // -1 means enchanted but count unknown (Hypixel strips data)
+                                    String countText = enchantCount == -1 ? "E" : String.valueOf(enchantCount);
+                                    int textWidth = mc.fontRendererObj.getStringWidth(countText);
+                                    GlStateManager.pushMatrix();
+                                    GlStateManager.scale(0.5F, 0.5F, 1.0F);
+                                    GlStateManager.disableDepth();
+                                    mc.fontRendererObj.drawString(
+                                            countText,
+                                            (itemX + 8) * 2 - textWidth / 2,
+                                            (-yOffset - 16 - 5) * 2,
+                                            0xFF55FF55,
+                                            shadow.getValue());
+                                    GlStateManager.enableDepth();
+                                    GlStateManager.popMatrix();
+                                }
+                            }
                         }
                         yOffset += 16;
                     }
@@ -271,6 +295,27 @@ public class NameTagsModule extends Module {
         GlStateManager.disableBlend();
         GlStateManager.enableTexture2D();
         GlStateManager.popMatrix();
+    }
+
+    private int getEnchantmentCount(ItemStack stack) {
+        if (stack == null) {
+            return 0;
+        }
+
+        if (stack.hasTagCompound()) {
+            NBTTagList enchants = stack.getEnchantmentTagList();
+            if (enchants != null && enchants.tagCount() > 0) {
+                return enchants.tagCount();
+            }
+        }
+
+        // Fallback: if item has glint effect but no readable enchant data
+        // (Hypixel strips enchant NBT for other players), show "?" indicator
+        if (stack.hasEffect()) {
+            return -1; // -1 means "enchanted but count unknown"
+        }
+
+        return 0;
     }
 
     private void renderPotionEffect(PotionEffect effect, int x, int y) {

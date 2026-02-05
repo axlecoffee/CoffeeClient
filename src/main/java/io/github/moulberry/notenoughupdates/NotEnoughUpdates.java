@@ -222,6 +222,7 @@ public class NotEnoughUpdates {
 		INSTANCE = this;
 
 		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.init();
+
 		neuDir = new File(event.getModConfigurationDirectory(), "notenoughupdates");
 		neuDir.mkdirs();
 
