@@ -1,7 +1,7 @@
 package io.github.moulberry.notenoughupdates.mixins;
 
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.AntiDebuffModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.render.AntiDebuff;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
@@ -14,11 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinEntityLivingBase {
     @Inject(method = "addPotionEffect", at = @At("HEAD"), cancellable = true)
     private void onAddPotionEffect(PotionEffect effect, CallbackInfo ci) {
-        AntiDebuffModule module = (AntiDebuffModule) CoffeeClient.moduleManager.getModule(AntiDebuffModule.class);
-        if (module != null && module.isEnabled()) {
+        AntiDebuff feature = (AntiDebuff) CoffeeClient.featureManager.getFeature(AntiDebuff.class);
+        if (feature != null && feature.isEnabled()) {
             int effectId = effect.getPotionID();
-            if ((effectId == Potion.blindness.id && module.blindness.getValue())
-                    || (effectId == Potion.confusion.id && module.nausea.getValue())) {
+            if ((effectId == Potion.blindness.id && feature.blindness.getValue())
+                    || (effectId == Potion.confusion.id && feature.nausea.getValue())) {
                 ci.cancel();
             }
         }

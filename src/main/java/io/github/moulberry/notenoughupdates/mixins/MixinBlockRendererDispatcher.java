@@ -20,7 +20,7 @@
 package io.github.moulberry.notenoughupdates.mixins;
 
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedESPModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.render.BedESP;
 import net.minecraft.block.BlockBed;
 import net.minecraft.block.BlockBed.EnumPartType;
 import net.minecraft.block.state.IBlockState;
@@ -46,8 +46,8 @@ public abstract class MixinBlockRendererDispatcher {
             IBlockAccess blockAccess,
             WorldRenderer worldRenderer,
             CallbackInfoReturnable<Boolean> cir) {
-        if (CoffeeClient.moduleManager != null) {
-            BedESPModule bedESP = (BedESPModule) CoffeeClient.moduleManager.getModule(BedESPModule.class);
+        if (CoffeeClient.featureManager != null) {
+            BedESP bedESP = (BedESP) CoffeeClient.featureManager.getFeature(BedESP.class);
             if (bedESP != null && bedESP.isEnabled() &&
                     state.getBlock() instanceof BlockBed &&
                     state.getValue(BlockBed.PART) == EnumPartType.HEAD) {

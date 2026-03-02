@@ -159,18 +159,18 @@ public class MixinNetHandlerPlayClient {
 
 	@Inject(method = "handleChat", at = @At("HEAD"))
 	public void handleChat(net.minecraft.network.play.server.S02PacketChat packetIn, CallbackInfo ci) {
-		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.moduleManager.modules.values().stream()
-				.filter(m -> m instanceof io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedTrackerModule)
-				.forEach(m -> ((io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedTrackerModule) m)
+		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.featureManager.features.values().stream()
+				.filter(m -> m instanceof io.github.moulberry.notenoughupdates.coffeeclient.feature.world.BedTracker)
+				.forEach(m -> ((io.github.moulberry.notenoughupdates.coffeeclient.feature.world.BedTracker) m)
 						.onPacketReceive(packetIn));
 	}
 
 	@Inject(method = "handlePlayerPosLook", at = @At("RETURN"))
 	public void handlePlayerPosLookPost(net.minecraft.network.play.server.S08PacketPlayerPosLook packetIn,
 			CallbackInfo ci) {
-		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.moduleManager.modules.values().stream()
-				.filter(m -> m instanceof io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedTrackerModule)
-				.forEach(m -> ((io.github.moulberry.notenoughupdates.coffeeclient.module.modules.BedTrackerModule) m)
+		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.featureManager.features.values().stream()
+				.filter(m -> m instanceof io.github.moulberry.notenoughupdates.coffeeclient.feature.world.BedTracker)
+				.forEach(m -> ((io.github.moulberry.notenoughupdates.coffeeclient.feature.world.BedTracker) m)
 						.onPacketReceive(packetIn));
 	}
 }

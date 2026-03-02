@@ -21,7 +21,7 @@ package io.github.moulberry.notenoughupdates.mixins;
 
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
 import io.github.moulberry.notenoughupdates.coffeeclient.events.LeftClickMouseEvent;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.NoHitDelayModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.combat.NoHitDelay;
 import io.github.moulberry.notenoughupdates.miscfeatures.SlotLocking;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.MinecraftForge;
@@ -40,9 +40,9 @@ public class MixinMinecraft {
 
     @Inject(method = "clickMouse", at = @At("HEAD"), cancellable = true)
     private void onClickMouse(CallbackInfo ci) {
-        if (CoffeeClient.moduleManager != null) {
-            NoHitDelayModule noHitDelay = (NoHitDelayModule) CoffeeClient.moduleManager
-                    .getModule(NoHitDelayModule.class);
+        if (CoffeeClient.featureManager != null) {
+            NoHitDelay noHitDelay = (NoHitDelay) CoffeeClient.featureManager
+                    .getFeature(NoHitDelay.class);
             if (noHitDelay != null && noHitDelay.isEnabled()) {
                 this.leftClickCounter = 0;
             }
