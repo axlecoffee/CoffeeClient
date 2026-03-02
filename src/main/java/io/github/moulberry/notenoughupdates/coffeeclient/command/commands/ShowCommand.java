@@ -15,10 +15,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
-public class ToggleCommand extends Command {
+public class ShowCommand extends Command {
 
-	public ToggleCommand() {
-		super(new ArrayList<>(Arrays.asList("toggle", "t")));
+	public ShowCommand() {
+		super(new ArrayList<>(Arrays.asList("show", "s", "unhide")));
 	}
 
 	@Override
@@ -27,29 +27,24 @@ public class ToggleCommand extends Command {
 			ChatUtil.sendFormatted(
 					String.format("&7[&bCoffeeClient&7]&r Usage: .%s <&ofeature&r>&r",
 							args.get(0).toLowerCase(Locale.ROOT)));
-		} else {
+		} else if (!args.get(1).equals("*")) {
 			Feature feature = CoffeeClient.featureManager.getFeature(args.get(1));
 			if (feature == null) {
 				ChatUtil.sendFormatted(
-						String.format("&7[&bCoffeeClient&7]&r Feature not found (&o%s&r)&r", args.get(1)));
+						String.format("&7[&bCoffeeClient&7]&r Feature &o%s&r not found&r", args.get(1)));
+			} else if (!feature.isHidden()) {
+				ChatUtil.sendFormatted(
+						String.format("&7[&bCoffeeClient&7]&r &o%s&r is not hidden in HUD&r", feature.getName()));
 			} else {
-				boolean changed = true;
-				if (args.size() >= 3) {
-					if (args.get(2).equalsIgnoreCase("true")
-							|| args.get(2).equalsIgnoreCase("on")
-							|| args.get(2).equalsIgnoreCase("1")) {
-						changed = !feature.isEnabled();
-					} else if (args.get(2).equalsIgnoreCase("false")
-							|| args.get(2).equalsIgnoreCase("off")
-							|| args.get(2).equalsIgnoreCase("0")) {
-						changed = feature.isEnabled();
-					}
-				}
-				if (changed && feature.toggle()) {
-					ChatUtil.sendFormatted(String.format("&7[&bCoffeeClient&7]&r %s: %s&r", feature.getName(),
-							feature.isEnabled() ? "&a&lON" : "&c&lOFF"));
-				}
+				feature.setHidden(false);
+				ChatUtil.sendFormatted(
+						String.format("&7[&bCoffeeClient&7]&r &o%s&r is no longer hidden in HUD&r", feature.getName()));
 			}
+		} else {
+			for (Feature feature : CoffeeClient.featureManager.features.values()) {
+				feature.setHidden(false);
+			}
+			ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r All features are no longer hidden in HUD&r");
 		}
 	}
 }

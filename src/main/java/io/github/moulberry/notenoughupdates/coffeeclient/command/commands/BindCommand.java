@@ -8,7 +8,7 @@ package io.github.moulberry.notenoughupdates.coffeeclient.command.commands;
 
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
 import io.github.moulberry.notenoughupdates.coffeeclient.command.Command;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.Feature;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.ChatUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.KeyBindUtil;
 
@@ -28,22 +28,22 @@ public class BindCommand extends Command {
 	public void runCommand(ArrayList<String> args) {
 		if (args.size() < 3) {
 			if (args.size() == 2 && (args.get(1).equalsIgnoreCase("l") || args.get(1).equalsIgnoreCase("list"))) {
-				List<Module> modules = CoffeeClient.moduleManager.modules.values().stream()
-						.filter(module -> module.getKey() != 0)
+				List<Feature> features = CoffeeClient.featureManager.features.values().stream()
+						.filter(feature -> feature.getKey() != 0)
 						.collect(Collectors.toList());
-				if (modules.isEmpty()) {
+				if (features.isEmpty()) {
 					ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r No binds&r");
 				} else {
 					ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r Binds:&r");
-					for (Module module : modules) {
+					for (Feature feature : features) {
 						ChatUtil.sendFormatted(
-								String.format("%s»&r %s&r", module.isHidden() ? "&8" : "&7", module.formatModule()));
+								String.format("%s»&r %s&r", feature.isHidden() ? "&8" : "&7", feature.formatFeature()));
 					}
 				}
 			} else {
 				ChatUtil.sendFormatted(
 						String.format(
-								"&7[&bCoffeeClient&7]&r Usage: .%s <&omodule&r> <&okey&r>&r | .%s <&omodule&r> &onone&r | .%s &olist&r",
+								"&7[&bCoffeeClient&7]&r Usage: .%s <&ofeature&r> <&okey&r>&r | .%s <&ofeature&r> &onone&r | .%s &olist&r",
 								args.get(0).toLowerCase(Locale.ROOT),
 								args.get(0).toLowerCase(Locale.ROOT),
 								args.get(0).toLowerCase(Locale.ROOT)));
@@ -53,30 +53,30 @@ public class BindCommand extends Command {
 			int keyIndex = KeyBindUtil.getKeyCode(keyInput);
 
 			if (!args.get(1).equals("*")) {
-				Module module = CoffeeClient.moduleManager.getModule(args.get(1));
-				if (module == null) {
+				Feature feature = CoffeeClient.featureManager.getFeature(args.get(1));
+				if (feature == null) {
 					ChatUtil.sendFormatted(
-							String.format("&7[&bCoffeeClient&7]&r Module not found (&o%s&r)&r", args.get(1)));
+							String.format("&7[&bCoffeeClient&7]&r Feature not found (&o%s&r)&r", args.get(1)));
 				} else {
-					module.setKey(keyIndex);
+					feature.setKey(keyIndex);
 					if (keyIndex == 0) {
 						ChatUtil.sendFormatted(
-								String.format("&7[&bCoffeeClient&7]&r Unbound &o%s&r", module.getName()));
+								String.format("&7[&bCoffeeClient&7]&r Unbound &o%s&r", feature.getName()));
 					} else {
 						ChatUtil.sendFormatted(
-								String.format("&7[&bCoffeeClient&7]&r Bound &o%s&r to &l[%s]&r", module.getName(),
+								String.format("&7[&bCoffeeClient&7]&r Bound &o%s&r to &l[%s]&r", feature.getName(),
 										KeyBindUtil.getKeyName(keyIndex)));
 					}
 				}
 			} else {
-				for (Module module : CoffeeClient.moduleManager.modules.values()) {
-					module.setKey(keyIndex);
+				for (Feature feature : CoffeeClient.featureManager.features.values()) {
+					feature.setKey(keyIndex);
 				}
 				if (keyIndex == 0) {
-					ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r Unbound all modules&r");
+					ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r Unbound all features&r");
 				} else {
 					ChatUtil.sendFormatted(
-							String.format("&7[&bCoffeeClient&7]&r Bound all modules to &l[%s]&r",
+							String.format("&7[&bCoffeeClient&7]&r Bound all features to &l[%s]&r",
 									KeyBindUtil.getKeyName(keyIndex)));
 				}
 			}

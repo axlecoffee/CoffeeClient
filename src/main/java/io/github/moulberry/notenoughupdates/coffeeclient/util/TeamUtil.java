@@ -38,6 +38,20 @@ public class TeamUtil {
         return entityLivingBase.getHealth() * (20.0f / (float) entityLivingBase.getTotalArmorValue());
     }
 
+    /**
+     * Checks if the player is a friend (currently always false — no friend list implemented).
+     */
+    public static boolean isFriend(EntityPlayer player) {
+        return false;
+    }
+
+    /**
+     * Checks if an entity is a valid attack target (non-bot player entity).
+     */
+    public static boolean isTarget(EntityPlayer player) {
+        return player != mc.thePlayer && !isBot(player) && !isShop(player);
+    }
+
     public static boolean isBot(EntityPlayer player) {
         if (player == mc.thePlayer) {
             return false;

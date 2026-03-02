@@ -8,7 +8,7 @@ package io.github.moulberry.notenoughupdates.coffeeclient.command.commands;
 
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
 import io.github.moulberry.notenoughupdates.coffeeclient.command.Command;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.Feature;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.ChatUtil;
 
 import java.util.ArrayList;
@@ -22,11 +22,11 @@ public class CoffeeCommand extends Command {
 
 	@Override
 	public void runCommand(ArrayList<String> args) {
-		if (!CoffeeClient.moduleManager.modules.isEmpty()) {
-			ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r Modules:&r");
-			for (Module module : CoffeeClient.moduleManager.modules.values()) {
+		if (!CoffeeClient.featureManager.features.isEmpty()) {
+			ChatUtil.sendFormatted("&7[&bCoffeeClient&7]&r Features:&r");
+			for (Feature feature : CoffeeClient.featureManager.features.values()) {
 				ChatUtil.sendFormatted(
-						String.format("%s»&r %s&r", module.isHidden() ? "&8" : "&7", module.formatModule()));
+						String.format("%s»&r %s&r", feature.isHidden() ? "&8" : "&7", feature.formatFeature()));
 			}
 		}
 	}

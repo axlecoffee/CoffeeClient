@@ -12,7 +12,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.Feature;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.Property;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.ChatUtil;
 
@@ -65,12 +65,12 @@ public class Config {
 			}
 
 			JsonObject jsonObject = parsed.getAsJsonObject();
-			for (Module module : CoffeeClient.moduleManager.modules.values()) {
-				JsonElement moduleObj = jsonObject.get(module.getName());
-				if (moduleObj != null && moduleObj.isJsonObject()) {
-					JsonObject object = moduleObj.getAsJsonObject();
+			for (Feature feature : CoffeeClient.featureManager.features.values()) {
+				JsonElement featureObj = jsonObject.get(feature.getName());
+				if (featureObj != null && featureObj.isJsonObject()) {
+					JsonObject object = featureObj.getAsJsonObject();
 
-					ArrayList<Property<?>> list = CoffeeClient.propertyManager.properties.get(module.getClass());
+					ArrayList<Property<?>> list = CoffeeClient.propertyManager.properties.get(feature.getClass());
 					if (list != null) {
 						for (Property<?> property : list) {
 							if (object.has(property.getName())) {
@@ -78,8 +78,8 @@ public class Config {
 									property.read(object);
 								} catch (Exception e) {
 									CoffeeClient.LOGGER.warn(String.format(
-											"Failed to load property %s for module %s",
-											property.getName(), module.getName()));
+											"Failed to load property %s for feature %s",
+											property.getName(), feature.getName()));
 								}
 							}
 						}
@@ -89,8 +89,8 @@ public class Config {
 						JsonElement toggled = object.get("toggled");
 						if (toggled != null && toggled.isJsonPrimitive()) {
 							boolean enabled = toggled.getAsBoolean();
-							if (module.isEnabled() != enabled) {
-								module.setEnabled(enabled);
+							if (feature.isEnabled() != enabled) {
+								feature.setEnabled(enabled);
 							}
 						}
 					}
@@ -98,14 +98,14 @@ public class Config {
 					if (object.has("key")) {
 						JsonElement key = object.get("key");
 						if (key != null && key.isJsonPrimitive()) {
-							module.setKey(key.getAsInt());
+							feature.setKey(key.getAsInt());
 						}
 					}
 
 					if (object.has("hidden")) {
 						JsonElement hidden = object.get("hidden");
 						if (hidden != null && hidden.isJsonPrimitive()) {
-							module.setHidden(hidden.getAsBoolean());
+							feature.setHidden(hidden.getAsBoolean());
 						}
 					}
 				}
@@ -127,26 +127,26 @@ public class Config {
 
 			JsonObject jsonObject = new JsonObject();
 
-			for (Module module : CoffeeClient.moduleManager.modules.values()) {
-				JsonObject moduleObj = new JsonObject();
-				moduleObj.addProperty("toggled", module.isEnabled());
-				moduleObj.addProperty("key", module.getKey());
-				moduleObj.addProperty("hidden", module.isHidden());
+			for (Feature feature : CoffeeClient.featureManager.features.values()) {
+				JsonObject featureObj = new JsonObject();
+				featureObj.addProperty("toggled", feature.isEnabled());
+				featureObj.addProperty("key", feature.getKey());
+				featureObj.addProperty("hidden", feature.isHidden());
 
-				ArrayList<Property<?>> list = CoffeeClient.propertyManager.properties.get(module.getClass());
+				ArrayList<Property<?>> list = CoffeeClient.propertyManager.properties.get(feature.getClass());
 				if (list != null) {
 					for (Property<?> property : list) {
 						try {
-							property.write(moduleObj);
+							property.write(featureObj);
 						} catch (Exception e) {
 							CoffeeClient.LOGGER.warn(String.format(
-									"Failed to save property %s for module %s",
-									property.getName(), module.getName()));
+									"Failed to save property %s for feature %s",
+									property.getName(), feature.getName()));
 						}
 					}
 				}
 
-				jsonObject.add(module.getName(), moduleObj);
+				jsonObject.add(feature.getName(), featureObj);
 			}
 
 			PrintWriter printWriter = new PrintWriter(new FileWriter(file));

@@ -21,6 +21,7 @@ public class KnockbackEvent extends Event {
 
     public void setX(double x) {
         this.x = x;
+        this.setCanceled(true);
     }
 
     public double getY() {
@@ -29,6 +30,7 @@ public class KnockbackEvent extends Event {
 
     public void setY(double y) {
         this.y = y;
+        this.setCanceled(true);
     }
 
     public double getZ() {
@@ -37,5 +39,6 @@ public class KnockbackEvent extends Event {
 
     public void setZ(double z) {
         this.z = z;
+        this.setCanceled(true);
     }
 }
