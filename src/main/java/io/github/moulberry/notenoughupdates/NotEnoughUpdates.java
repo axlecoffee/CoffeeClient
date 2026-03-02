@@ -78,6 +78,8 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -199,6 +201,10 @@ public class NotEnoughUpdates {
 		((AccessorMinecraft) FMLClientHandler.instance().getClient())
 				.onGetDefaultResourcePacks()
 				.add(new NEURepoResourcePack(null, "neurepo"));
+
+		// CoffeeLoader — instantiate external mods, fire early events
+		io.github.moulberry.notenoughupdates.coffeeclient.hook.CoffeeLoader.onNEUConstruct(this);
+
 	}
 
 	public File getConfigFile() {
@@ -220,9 +226,8 @@ public class NotEnoughUpdates {
 	@EventHandler
 	public void preinit(FMLPreInitializationEvent event) {
 		INSTANCE = this;
-
+		io.github.moulberry.notenoughupdates.coffeeclient.hook.CoffeeLoader.onPreInit();
 		io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient.init();
-
 		neuDir = new File(event.getModConfigurationDirectory(), "notenoughupdates");
 		neuDir.mkdirs();
 
@@ -502,5 +507,15 @@ public class NotEnoughUpdates {
 			SBInfo.getInstance().resetScoreboardLocation();
 			hasSkyblockScoreboard = false;
 		}
+	}
+
+	@EventHandler
+	public void init(FMLInitializationEvent event) {
+		io.github.moulberry.notenoughupdates.coffeeclient.hook.CoffeeLoader.onInit();
+	}
+
+	@EventHandler
+	public void postInit(FMLPostInitializationEvent event) {
+		io.github.moulberry.notenoughupdates.coffeeclient.hook.CoffeeLoader.onPostInit();
 	}
 }

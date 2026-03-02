@@ -19,27 +19,30 @@
 
 package io.github.moulberry.notenoughupdates.loader;
 
-import io.github.moulberry.notenoughupdates.BuildFlags;
 import io.github.moulberry.notenoughupdates.envcheck.EnvironmentScan;
 import net.minecraft.launchwrapper.ITweaker;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.launchwrapper.LaunchClassLoader;
-import org.spongepowered.asm.launch.MixinTweaker;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Tweaker used by NEU to allow delegating to multiple tweakers. The following Tweakers are currently delegated to:
+ * Tweaker used by NEU to allow delegating to multiple tweakers. The following
+ * Tweakers are currently delegated to:
  *
  * <ul>
- * 	<li>{@link KotlinLoadingTweaker} for late loading Kotlin</li>
- * 	<li>{@link MixinTweaker} for loading Mixins</li>
- * 	<li>{@link ModLoadingTweaker} to ensure we are recognized as a forge mod</li>
+ * <li>{@link MixinLoadingTweaker} for loading Mixin library JARs</li>
+ * <li>{@code org.spongepowered.asm.launch.MixinTweaker} for loading Mixins</li>
+ * <li>{@link ModLoadingTweaker} to ensure we are recognized as a forge mod</li>
+ * <li>{@link KotlinLoadingTweaker} for late loading Kotlin</li>
  * </ul>
  *
- * <p>We also run an environment check, to make sure we are running on the correct Forge and Minecraft version.</p>
+ * <p>
+ * We also run an environment check, to make sure we are running on the correct
+ * Forge and Minecraft version.
+ * </p>
  *
  * @see EnvironmentScan
  */
@@ -53,7 +56,6 @@ public class NEUDelegatingTweaker implements ITweaker {
 
 	public NEUDelegatingTweaker() {
 		discoverTweakers();
-		System.out.println("NEU Delegating Tweaker is loaded with: " + delegates);
 	}
 
 	private void discoverTweakers() {

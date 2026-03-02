@@ -273,6 +273,16 @@ tasks.shadowJar {
 
 tasks.assemble.get().dependsOn(remapJar)
 
+// Deploy NEU override JAR to Lunar Client's overrides directory
+tasks.register<Copy>("idep") {
+	dependsOn(remapJar)
+	from(remapJar.archiveFile)
+	into(file("C:\\Users\\blood\\.lunarclient\\offline\\multiver\\overrides"))
+	doLast {
+		println("Deployed ${remapJar.archiveFile.get().asFile.name} -> C:\\Users\\blood\\.lunarclient\\offline\\multiver\\overrides\\")
+	}
+}
+
 tasks.processResources {
 	from(tasks["generateBuildFlags"])
 	from(includeBackupRepo)
