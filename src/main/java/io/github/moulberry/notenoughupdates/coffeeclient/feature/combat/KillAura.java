@@ -17,7 +17,10 @@ import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.Boo
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.FloatProperty;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.IntProperty;
 import io.github.moulberry.notenoughupdates.coffeeclient.property.properties.ModeProperty;
+import io.github.moulberry.notenoughupdates.coffeeclient.rotation.KillAuraRotation;
+import io.github.moulberry.notenoughupdates.coffeeclient.rotation.RotationState;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.*;
+import io.github.moulberry.notenoughupdates.mixins.IAccessorC03PacketPlayer;
 import io.github.moulberry.notenoughupdates.mixins.IAccessorPlayerControllerMP;
 
 import net.minecraft.client.Minecraft;
@@ -40,6 +43,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.network.play.client.C02PacketUseEntity;
 import net.minecraft.network.play.client.C02PacketUseEntity.Action;
+import net.minecraft.network.play.client.C03PacketPlayer;
 import net.minecraft.network.play.client.C07PacketPlayerDigging;
 import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.client.C09PacketHeldItemChange;
@@ -84,20 +88,14 @@ public class KillAura extends Feature {
     private int blockTick = 0;
     private int lastTickProcessed = 0;
 
-    // Saved rotations for silent aim
-    private float savedYaw;
-    private float savedPitch;
-    private float spoofedYaw;
-    private float spoofedPitch;
-    private boolean rotationSpoofed = false;
+    private final RotationState rotState = RotationState.getInstance();
+    private final KillAuraRotation rotController = new KillAuraRotation(rotState);
 
-    // --- Properties ---
-
-    public final ModeProperty mode = new ModeProperty("mode", 0, new String[]{"SINGLE", "SWITCH"});
-    public final ModeProperty sort = new ModeProperty("sort", 0, new String[]{"DISTANCE", "HEALTH", "HURT_TIME", "FOV"});
+    public final ModeProperty mode = new ModeProperty("mode", 0, new String[] { "SINGLE", "SWITCH" });
+    public final ModeProperty sort = new ModeProperty("sort", 0,
+            new String[] { "DISTANCE", "HEALTH", "HURT_TIME", "FOV" });
     public final ModeProperty autoBlock = new ModeProperty(
-            "auto-block", 0, new String[]{"NONE", "VANILLA", "SPOOF", "HYPIXEL", "LEGIT", "FAKE"}
-    );
+            "auto-block", 0, new String[] { "NONE", "VANILLA", "SPOOF", "HYPIXEL", "LEGIT", "FAKE" });
     public final BooleanProperty autoBlockRequirePress = new BooleanProperty("auto-block-require-press", false);
     public final FloatProperty autoBlockMinCPS = new FloatProperty("auto-block-min-aps", 8.0f, 1.0f, 20.0f);
     public final FloatProperty autoBlockMaxCPS = new FloatProperty("auto-block-max-aps", 10.0f, 1.0f, 20.0f);
@@ -108,8 +106,9 @@ public class KillAura extends Feature {
     public final IntProperty minCPS = new IntProperty("min-aps", 14, 1, 20);
     public final IntProperty maxCPS = new IntProperty("max-aps", 14, 1, 20);
     public final IntProperty switchDelay = new IntProperty("switch-delay", 150, 0, 1000);
-    public final ModeProperty rotations = new ModeProperty("rotations", 2, new String[]{"NONE", "LEGIT", "SILENT", "LOCK_VIEW"});
-    public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[]{"NONE", "SILENT", "STRICT"});
+    public final ModeProperty rotations = new ModeProperty("rotations", 2,
+            new String[] { "NONE", "LEGIT", "SILENT", "LOCK_VIEW" });
+    public final ModeProperty moveFix = new ModeProperty("move-fix", 1, new String[] { "NONE", "SILENT", "STRICT" });
     public final IntProperty smoothing = new IntProperty("smoothing", 0, 0, 100);
     public final IntProperty angleStep = new IntProperty("angle-step", 90, 30, 180);
     public final BooleanProperty throughWalls = new BooleanProperty("through-walls", true);
@@ -126,8 +125,8 @@ public class KillAura extends Feature {
     public final BooleanProperty golems = new BooleanProperty("golems", false);
     public final BooleanProperty silverfish = new BooleanProperty("silverfish", false);
     public final BooleanProperty teams = new BooleanProperty("teams", true);
-    public final ModeProperty showTarget = new ModeProperty("show-target", 0, new String[]{"NONE", "DEFAULT"});
-    public final ModeProperty debugLog = new ModeProperty("debug-log", 0, new String[]{"NONE", "HEALTH"});
+    public final ModeProperty showTarget = new ModeProperty("show-target", 0, new String[] { "NONE", "DEFAULT" });
+    public final ModeProperty debugLog = new ModeProperty("debug-log", 0, new String[] { "NONE", "HEALTH" });
 
     public KillAura() {
         super("KillAura", false);
@@ -222,7 +221,8 @@ public class KillAura extends Feature {
     }
 
     private void interactAttack(float yaw, float pitch) {
-        if (target == null) return;
+        if (target == null)
+            return;
         MovingObjectPosition mop = RotationUtil.rayTrace(target.getBox(), yaw, pitch, 8.0);
         if (mop != null) {
             IAccessorPlayerControllerMP controller = (IAccessorPlayerControllerMP) mc.playerController;
@@ -232,9 +232,7 @@ public class KillAura extends Feature {
                     new Vec3(
                             mop.hitVec.xCoord - target.getX(),
                             mop.hitVec.yCoord - target.getY(),
-                            mop.hitVec.zCoord - target.getZ()
-                    )
-            ));
+                            mop.hitVec.zCoord - target.getZ())));
             PacketUtil.sendPacket(new C02PacketUseEntity(target.getEntity(), Action.INTERACT));
             PacketUtil.sendPacket(new C08PacketPlayerBlockPlacement(mc.thePlayer.getHeldItem()));
             mc.thePlayer.setItemInUse(mc.thePlayer.getHeldItem(), mc.thePlayer.getHeldItem().getMaxItemUseDuration());
@@ -396,15 +394,14 @@ public class KillAura extends Feature {
 
     @SubscribeEvent
     public void onUpdate(UpdateEvent event) {
-        if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null) return;
+        if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null)
+            return;
 
-        if (event.isPost() && rotationSpoofed) {
-            mc.thePlayer.rotationYaw = savedYaw;
-            mc.thePlayer.rotationPitch = savedPitch;
-            rotationSpoofed = false;
-        }
+        if (!event.isPre())
+            return;
 
-        if (!event.isPre()) return;
+        rotState.register();
+        rotState.captureClientAngles();
 
         if (attackDelayMS > 0L) {
             attackDelayMS -= 50L;
@@ -419,7 +416,8 @@ public class KillAura extends Feature {
             blockTick = 0;
         }
 
-        if (!attack) return;
+        if (!attack)
+            return;
 
         boolean swap = false;
         IAccessorPlayerControllerMP controller = (IAccessorPlayerControllerMP) mc.playerController;
@@ -563,53 +561,56 @@ public class KillAura extends Feature {
         float currentPitch = mc.thePlayer.rotationPitch;
         float attackYaw = currentYaw;
         float attackPitch = currentPitch;
+        float stepJitter = RandomUtil.nextFloat(-5.0f, 5.0f);
+        float smooth = (float) smoothing.getValue() / 100.0f;
 
         boolean attacked = false;
         if (isBoxInSwingRange(target.getBox())) {
-            if (rotations.getValue() == 2 || rotations.getValue() == 3) {
-                // SILENT or LOCK_VIEW
-                float[] rots = RotationUtil.getRotationsToBox(
-                        target.getBox(),
-                        currentYaw,
-                        currentPitch,
-                        (float) angleStep.getValue() + RandomUtil.nextFloat(-5.0f, 5.0f),
-                        (float) smoothing.getValue() / 100.0f
-                );
+            if (rotations.getValue() == 2) {
+                // SILENT — use KillAuraRotation VSPLIT + GCD pipeline.
+                // Target angles are stored in rotController and applied
+                // to outgoing C03 packets. The player's visual rotation
+                // is NEVER modified.
+                float hSpeed = 10.0f - smooth * 8.0f;
+                float vSpeed = 10.0f - smooth * 8.0f;
+                float[] rots = rotController.aimAt(
+                        target.getEntity(), smooth, hSpeed, vSpeed);
+                rotController.setActive(true);
                 attackYaw = rots[0];
                 attackPitch = rots[1];
 
-                if (rotations.getValue() == 3) {
-                    // LOCK_VIEW — directly set the player's rotation
-                    mc.thePlayer.rotationYaw = attackYaw;
-                    mc.thePlayer.rotationPitch = attackPitch;
-                } else {
-                    // SILENT — spoof rotation for the packet, then restore
-                    savedYaw = currentYaw;
-                    savedPitch = currentPitch;
-                    mc.thePlayer.rotationYaw = attackYaw;
-                    mc.thePlayer.rotationPitch = attackPitch;
-                    spoofedYaw = attackYaw;
-                    spoofedPitch = attackPitch;
-                    rotationSpoofed = true;
-                }
-            } else if (rotations.getValue() == 1) {
-                // LEGIT — smooth rotation applied to the actual view
-                float[] rots = RotationUtil.getRotationsToBox(
-                        target.getBox(),
-                        currentYaw,
-                        currentPitch,
-                        (float) angleStep.getValue() + RandomUtil.nextFloat(-5.0f, 5.0f),
-                        (float) smoothing.getValue() / 100.0f
-                );
+            } else if (rotations.getValue() == 3) {
+                // LOCK_VIEW — VSPLIT aim, applied directly to the player's view
+                float[] rots = rotController.aimAtStepped(
+                        target.getEntity(), currentYaw, currentPitch,
+                        (float) angleStep.getValue() + stepJitter, smooth);
                 mc.thePlayer.rotationYaw = rots[0];
                 mc.thePlayer.rotationPitch = rots[1];
                 attackYaw = rots[0];
                 attackPitch = rots[1];
+                rotController.setActive(false);
+
+            } else if (rotations.getValue() == 1) {
+                // LEGIT — smooth rotation applied to the actual view
+                float[] rots = rotController.aimAtStepped(
+                        target.getEntity(), currentYaw, currentPitch,
+                        (float) angleStep.getValue() + stepJitter, smooth);
+                mc.thePlayer.rotationYaw = rots[0];
+                mc.thePlayer.rotationPitch = rots[1];
+                attackYaw = rots[0];
+                attackPitch = rots[1];
+                rotController.setActive(false);
+
+            } else {
+                // NONE — no rotation changes
+                rotController.setActive(false);
             }
 
             if (attack) {
                 attacked = performAttack(attackYaw, attackPitch);
             }
+        } else {
+            rotController.setActive(false);
         }
 
         if (swap) {
@@ -623,7 +624,8 @@ public class KillAura extends Feature {
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
-        if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null) return;
+        if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null)
+            return;
 
         if (event.phase == TickEvent.Phase.START) {
             // Target selection (PRE tick)
@@ -710,9 +712,24 @@ public class KillAura extends Feature {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onPacket(PacketEvent event) {
-        if (!isEnabled() || event.isCanceled() || mc.thePlayer == null || mc.theWorld == null) return;
+        if (!isEnabled() || event.isCanceled() || mc.thePlayer == null || mc.theWorld == null)
+            return;
 
         if (event.isSend()) {
+            // ── Silent rotation: spoof yaw/pitch on outgoing C03 packets ──
+            // This is the correct way to do silent aim — the player's visual
+            // rotation (rotationYaw/Pitch) is never changed, so the camera
+            // stays perfectly still. Only the packet the server receives
+            // contains the spoofed angles.
+            if (event.getPacket() instanceof C03PacketPlayer
+                    && rotController.isActive()
+                    && rotations.getValue() == 2) {
+                IAccessorC03PacketPlayer accessor = (IAccessorC03PacketPlayer) event.getPacket();
+                accessor.setYaw(rotController.getTargetYaw());
+                accessor.setPitch(rotController.getTargetPitch());
+                accessor.setRotating(true);
+            }
+
             if (event.getPacket() instanceof C07PacketPlayerDigging) {
                 C07PacketPlayerDigging packet = (C07PacketPlayerDigging) event.getPacket();
                 if (packet.getStatus() == C07PacketPlayerDigging.Action.RELEASE_USE_ITEM) {
@@ -738,8 +755,7 @@ public class KillAura extends Feature {
                             CoffeeClient.CLIENT_NAME,
                             diff > 0.0f ? "&a" : "&c",
                             df.format(diff),
-                            mc.thePlayer.ticksExisted
-                    ));
+                            mc.thePlayer.ticksExisted));
                 }
             }
         }
@@ -747,13 +763,29 @@ public class KillAura extends Feature {
 
     @SubscribeEvent
     public void onMoveInput(MoveInputEvent event) {
-        if (!isEnabled() || mc.thePlayer == null) return;
+        if (!isEnabled() || mc.thePlayer == null)
+            return;
 
-        if (moveFix.getValue() == 1
-                && rotations.getValue() != 3
-                && rotationSpoofed
+        // Move fix: compensate WASD inputs for the yaw difference between
+        // the player's visual rotation and the spoofed server-side rotation.
+        if (moveFix.getValue() != 0
+                && rotations.getValue() == 2
+                && rotController.isActive()
                 && MoveUtil.isForwardPressed()) {
-            MoveUtil.fixStrafe(spoofedYaw);
+            if (moveFix.getValue() == 1) {
+                // SILENT move fix — remap to 8 directions
+                MoveUtil.fixStrafe(rotController.getTargetYaw());
+            } else {
+                // STRICT move fix — continuous rotation compensation
+                float forward = mc.thePlayer.movementInput.moveForward;
+                float strafe = mc.thePlayer.movementInput.moveStrafe;
+                float delta = (float) Math.toRadians(
+                        mc.thePlayer.rotationYaw - rotController.getTargetYaw());
+                float cos = net.minecraft.util.MathHelper.cos(delta);
+                float sin = net.minecraft.util.MathHelper.sin(delta);
+                mc.thePlayer.movementInput.moveForward = forward * cos + strafe * sin;
+                mc.thePlayer.movementInput.moveStrafe = strafe * cos - forward * sin;
+            }
         }
         if (shouldAutoBlock()) {
             mc.thePlayer.movementInput.jump = false;
@@ -762,7 +794,8 @@ public class KillAura extends Feature {
 
     @SubscribeEvent
     public void onRenderWorld(RenderWorldLastEvent event) {
-        if (!isEnabled() || target == null || mc.thePlayer == null) return;
+        if (!isEnabled() || target == null || mc.thePlayer == null)
+            return;
 
         if (showTarget.getValue() != 0
                 && TeamUtil.isEntityLoaded(target.getEntity())
@@ -782,7 +815,8 @@ public class KillAura extends Feature {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onLeftClick(LeftClickMouseEvent event) {
-        if (!isEnabled()) return;
+        if (!isEnabled())
+            return;
         if (isBlocking) {
             event.setCanceled(true);
         } else if (target != null && canAttack()) {
@@ -799,7 +833,7 @@ public class KillAura extends Feature {
         hitRegistered = false;
         attackDelayMS = 0L;
         blockTick = 0;
-        rotationSpoofed = false;
+        rotController.setActive(false);
     }
 
     @Override
@@ -807,7 +841,7 @@ public class KillAura extends Feature {
         blockingState = false;
         isBlocking = false;
         fakeBlockState = false;
-        rotationSpoofed = false;
+        rotController.setActive(false);
     }
 
     @Override
@@ -858,13 +892,12 @@ public class KillAura extends Feature {
 
     @Override
     public String[] getSuffix() {
-        return new String[]{CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, mode.getModeString())};
+        return new String[] { CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, mode.getModeString()) };
     }
 
-    // --- Inner class ---
-
     /**
-     * Snapshot of an entity's position and expanded bounding box at a specific moment.
+     * Snapshot of an entity's position and expanded bounding box at a specific
+     * moment.
      */
     public static class AttackData {
         private final EntityLivingBase entity;
@@ -883,10 +916,24 @@ public class KillAura extends Feature {
             this.z = entity.posZ;
         }
 
-        public EntityLivingBase getEntity() { return entity; }
-        public AxisAlignedBB getBox() { return box; }
-        public double getX() { return x; }
-        public double getY() { return y; }
-        public double getZ() { return z; }
+        public EntityLivingBase getEntity() {
+            return entity;
+        }
+
+        public AxisAlignedBB getBox() {
+            return box;
+        }
+
+        public double getX() {
+            return x;
+        }
+
+        public double getY() {
+            return y;
+        }
+
+        public double getZ() {
+            return z;
+        }
     }
 }

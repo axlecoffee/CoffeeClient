@@ -10,10 +10,8 @@ import io.github.moulberry.notenoughupdates.coffeeclient.rotation.RotationMath;
 import io.github.moulberry.notenoughupdates.coffeeclient.rotation.RotationState;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.ItemUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.KeyBindUtil;
-import io.github.moulberry.notenoughupdates.coffeeclient.util.PlayerUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.RotationUtil;
 import io.github.moulberry.notenoughupdates.coffeeclient.util.TeamUtil;
-import io.github.moulberry.notenoughupdates.coffeeclient.util.TimerUtil;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -37,6 +35,7 @@ public class AimAssist extends Feature {
     public final IntProperty smoothing = new IntProperty("smoothing", 50, 0, 100);
     public final FloatProperty range = new FloatProperty("range", 4.5F, 3.0F, 8.0F);
     public final IntProperty fov = new IntProperty("fov", 90, 30, 360);
+    public final BooleanProperty requirePress = new BooleanProperty("require-press", true);
     public final BooleanProperty weaponsOnly = new BooleanProperty("weapons-only", true);
     public final BooleanProperty allowTools = new BooleanProperty("allow-tools", false, weaponsOnly::getValue);
     public final BooleanProperty playersOnly = new BooleanProperty("players-only", true);
@@ -50,7 +49,6 @@ public class AimAssist extends Feature {
     public final FloatProperty contractionMin = new FloatProperty("contraction-min", 0.03F, 0.01F, 0.15F);
     public final FloatProperty contractionMax = new FloatProperty("contraction-max", 0.22F, 0.10F, 0.30F);
 
-    private final TimerUtil attackTimer = new TimerUtil();
     private final RotationState rotationState = RotationState.getInstance();
     private AimAssistRotation rotation;
 
@@ -65,7 +63,6 @@ public class AimAssist extends Feature {
             rotationState.setServerAngles(mc.thePlayer.rotationYaw, mc.thePlayer.rotationPitch);
         }
         rotation = new AimAssistRotation(rotationState);
-        attackTimer.reset();
     }
 
     @Override
@@ -75,6 +72,14 @@ public class AimAssist extends Feature {
 
     private boolean isLookingAtBlock() {
         return mc.objectMouseOver != null && mc.objectMouseOver.typeOfHit == MovingObjectType.BLOCK;
+    }
+
+    /**
+     * Reads the physical input state (Mouse.isButtonDown / Keyboard.isKeyDown)
+     * via KeyBindUtil, which is independent of AutoClicker's keybind manipulation.
+     */
+    private boolean isAttackKeyDown() {
+        return KeyBindUtil.isKeyDown(mc.gameSettings.keyBindAttack.getKeyCode());
     }
 
     private void syncRotationSettings() {
@@ -101,16 +106,11 @@ public class AimAssist extends Feature {
             }
         }
 
-        boolean attacking = PlayerUtil.isAttacking();
-        if (attacking) {
-            attackTimer.reset();
-        }
-
-        if (attacking && isLookingAtBlock()) {
+        if (requirePress.getValue() && !isAttackKeyDown()) {
             return;
         }
 
-        if (!attacking && attackTimer.hasTimeElapsed(350L)) {
+        if (isAttackKeyDown() && isLookingAtBlock()) {
             return;
         }
 

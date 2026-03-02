@@ -7,6 +7,7 @@
   "mixins": [
     "AccessorEntityRenderer",
     "AccessorBooleanState",
+    "IAccessorC03PacketPlayer",
     "IAccessorC0DPacketCloseWindow",
     "IAccessorEntity",
     "IAccessorMinecraft",

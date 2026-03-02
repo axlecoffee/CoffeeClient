@@ -45,6 +45,14 @@ public class AutoClicker extends Feature {
         super("AutoClicker", false);
     }
 
+    /**
+     * Returns whether the AutoClicker is enabled and actively producing clicks.
+     * Used by AimAssist to maintain continuous aiming while auto-clicking.
+     */
+    public boolean isActivelyClicking() {
+        return isEnabled() && clickPending;
+    }
+
     private long getNextClickDelay() {
         return 1000L / RandomUtil.nextLong(minCPS.getValue(), maxCPS.getValue());
     }
