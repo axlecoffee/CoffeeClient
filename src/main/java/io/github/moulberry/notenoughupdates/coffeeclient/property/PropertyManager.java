@@ -6,7 +6,7 @@
 
 package io.github.moulberry.notenoughupdates.coffeeclient.property;
 
-import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.Feature;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,8 +15,8 @@ public class PropertyManager {
 
     public LinkedHashMap<Class<?>, ArrayList<Property<?>>> properties = new LinkedHashMap<>();
 
-    public Property<?> getProperty(Module module, String string) {
-        ArrayList<Property<?>> props = properties.get(module.getClass());
+    public Property<?> getProperty(Feature feature, String string) {
+        ArrayList<Property<?>> props = properties.get(feature.getClass());
         if (props == null) {
             return null;
         }

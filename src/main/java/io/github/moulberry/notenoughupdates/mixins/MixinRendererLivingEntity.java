@@ -21,7 +21,7 @@ package io.github.moulberry.notenoughupdates.mixins;
 
 import io.github.moulberry.notenoughupdates.NotEnoughUpdates;
 import io.github.moulberry.notenoughupdates.coffeeclient.CoffeeClient;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.modules.NameTagsModule;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.render.NameTags;
 import io.github.moulberry.notenoughupdates.miscfeatures.DamageCommas;
 import io.github.moulberry.notenoughupdates.overlays.BonemerangOverlay;
 import net.minecraft.client.renderer.entity.RendererLivingEntity;
@@ -47,8 +47,8 @@ public abstract class MixinRendererLivingEntity<T extends EntityLivingBase> {
 
 	@Inject(method = "canRenderName", at = @At("HEAD"), cancellable = true)
 	public void canRenderName(T entityLivingBase, CallbackInfoReturnable<Boolean> cir) {
-		if (CoffeeClient.moduleManager != null) {
-			NameTagsModule nameTags = (NameTagsModule) CoffeeClient.moduleManager.getModule(NameTagsModule.class);
+		if (CoffeeClient.featureManager != null) {
+			NameTags nameTags = (NameTags) CoffeeClient.featureManager.getFeature(NameTags.class);
 			if (nameTags != null && nameTags.isEnabled() && nameTags.shouldRenderTags(entityLivingBase)) {
 				cir.setReturnValue(false);
 			}

@@ -7,7 +7,7 @@
 package io.github.moulberry.notenoughupdates.coffeeclient.property;
 
 import com.google.gson.JsonObject;
-import io.github.moulberry.notenoughupdates.coffeeclient.module.Module;
+import io.github.moulberry.notenoughupdates.coffeeclient.feature.Feature;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
@@ -19,7 +19,7 @@ public abstract class Property<T> {
     private final Predicate<T> _validator;
     private final BooleanSupplier _visibleChecker;
     private T _value;
-    private Module _owner;
+    private Feature _owner;
 
     protected Property(String name, Object value, BooleanSupplier visibleChecker) {
         this(name, value, null, visibleChecker);
@@ -61,8 +61,8 @@ public abstract class Property<T> {
         }
     }
 
-    public void setOwner(Module module) {
-        this._owner = module;
+    public void setOwner(Feature feature) {
+        this._owner = feature;
     }
 
     public abstract boolean parseString(String string);
