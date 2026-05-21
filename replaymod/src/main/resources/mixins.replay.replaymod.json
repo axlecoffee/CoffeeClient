@@ -1,0 +1,70 @@
+{
+  "required": true,
+  "package": "com.replaymod.replay.mixin",
+  "plugin": "com.replaymod.core.ReplayModMixinConfigPlugin",
+  "mixins": [],
+  "server": [],
+  "client": [
+    "entity_tracking.Mixin_EntityExt",
+    "entity_tracking.Mixin_FixPartialUpdates",
+    "world_border.Mixin_UseReplayTime_ForMovement",
+    "world_border.Mixin_UseReplayTime_ForTexture",
+    "Mixin_HandleInputsInReplay",
+    "Mixin_FixNPCSkinCaching",
+    //#if MC>=11900
+    //$$ "Mixin_AllowExpiredPlayerKeys",
+    //#endif
+    //#if MC>=11800
+    //$$ "Mixin_FixEntityNotTracking",
+    //#endif
+    //#if MC>=11600
+    "Mixin_MoveRealmsButton",
+    //#endif
+    //#if MC>=11400
+    "MixinCamera",
+    "MixinInGameHud",
+    //#else
+    //$$ "Mixin_FixHandOffsetTickDelta",
+    //#endif
+    "ClientWorldAccessor",
+    "EntityLivingBaseAccessor",
+    //#if MC>=11400
+    "Mixin_ShowSpectatedHand_Iris",
+    "Mixin_ShowSpectatedHand_NoOF",
+    "Mixin_ShowSpectatedHand_OF",
+    //#else
+    //$$ "EntityOtherPlayerMPAccessor",
+    //#endif
+    //#if MC>=12106
+    //$$ "DrawContextAccessor",
+    //#endif
+    "EntityPlayerAccessor",
+    "FirstPersonRendererAccessor",
+    //#if MC>=10904
+    "MixinParticleManager",
+    //#endif
+    //#if MC>=10800
+    "MixinGuiSpectator",
+    "MixinRenderArrow",
+    //#if MC<11400
+    //$$ "MixinRenderManager",
+    //#endif
+    //#if MC<12102
+    "MixinViewFrustum",
+    //#endif
+    //#else
+    //$$ "MixinEntityRenderer",
+    //$$ "MixinFMLClientHandler",
+    //#endif
+    "MixinKeyboardListener",
+    "MixinPlayerControllerMP",
+    "Mixin_CreateReplayCamera",
+    "MixinRenderItem",
+    "MixinRenderLivingBase",
+    "MixinTileEntityEndPortalRenderer",
+    "MixinWorldClient"
+  ],
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.6.11",
+  "refmap": "mixins.replaymod.refmap.json"
+}

@@ -1,0 +1,4 @@
+coffeemods/
+coffee-loader.log
+.gradle/
+build/

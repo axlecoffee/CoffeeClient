@@ -1,0 +1,6 @@
+net.minecraft.init.MobEffects net.minecraft.potion.Potion
+net.minecraft.network.datasync.EntityDataManager net.minecraft.entity.DataWatcher
+net.minecraft.client.renderer.ItemRenderer rotateArm() rotateWithPlayerRotations()
+net.minecraft.util.SoundCategory net.minecraft.client.audio.SoundCategory
+net.minecraft.util.SoundEvent com.replaymod.core.versions.MCVer.SoundEvent
+

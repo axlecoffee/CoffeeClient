@@ -1,0 +1,34 @@
+{
+  "required": true,
+  "package": "com.replaymod.render.blend.mixin",
+  "mixins": [],
+  "server": [],
+  "client": [
+    //#if MC>=10800
+    //#if MC<11500
+    //$$ "WorldRendererAccessor",
+    //$$ "MixinChunkRenderWorker",
+    //$$ "MixinEffectRenderer",
+    //$$ "MixinModelRenderer",
+    //$$ "MixinTileEntityRendererDispatcher",
+    //$$ "ContainerLocalRenderInformationAccessor",
+    //#endif
+    //#if MC<10904
+    //$$ "EntityAccessor",
+    //#endif
+    //#if MC>=10904 && MC<11900
+    "ItemRendererAccessor",
+    //#endif
+    "ParticleAccessor",
+    //#if MC<11900
+    "MixinRenderGlobal",
+    "MixinRenderItem",
+    "MixinRenderLivingBase",
+    "MixinRenderManager"
+    //#endif
+    //#endif
+  ],
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.6.11",
+  "refmap": "mixins.replaymod.refmap.json"
+}

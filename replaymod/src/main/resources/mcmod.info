@@ -1,0 +1,137 @@
+[
+  {
+    "modid": "replaymod",
+    "name": "Replay Mod",
+    "description": "A Mod which allows you to record, replay and share your Minecraft experience.",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "screenshots": [],
+    "dependencies": []
+  },
+  {
+    "modid": "replaymod-recording",
+    "name": "Replay Mod - Recording",
+    "description": "Recording Module of the ReplayMod",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": []
+  },
+  {
+    "modid": "replaymod-replay",
+    "name": "Replay Mod - Replay",
+    "description": "Replay Module of the ReplayMod",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": []
+  },
+  {
+    "modid": "replaymod-simplepathing",
+    "name": "Replay Mod - Simple Pathing",
+    "description": "Simple Pathing Module of the ReplayMod - aka the original pathing",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": ["required-after:replaymod-replay", "required-after:replaymod-render"]
+  },
+  {
+    "modid": "replaymod-render",
+    "name": "Replay Mod - Render",
+    "description": "Render Module of the ReplayMod",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": ["required-after:replaymod-replay"]
+  },
+  {
+    "modid": "replaymod-editor",
+    "name": "Replay Mod - Replay Editor",
+    "description": "Replay Editor Module of the ReplayMod",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": []
+  },
+  {
+    "modid": "replaymod-extras",
+    "name": "Replay Mod - Extras",
+    "description": "Extras Module of the ReplayMod - Small but neat additions",
+    "version": "${version}",
+    "mcversion": "${mcVersionStr}",
+    "url": "https://replaymod.com",
+    "updateUrl": "https://replaymod.com/download",
+    "authorList": [
+      "CrushedPixel",
+      "johni0702"
+    ],
+    "logoFile": "replaymod_logo.png",
+    "parent": "replaymod",
+    "screenshots": [],
+    "dependencies": []
+  },
+  {
+      "modid": "replaymod-compat",
+      "name": "Replay Mod - Compatibility",
+      "description": "Compatibility Module of the ReplayMod - Adds compatibility with other mods",
+      "version": "${version}",
+      "mcversion": "${mcVersionStr}",
+      "url": "https://replaymod.com",
+      "updateUrl": "https://replaymod.com/download",
+      "authorList": [
+        "CrushedPixel",
+        "johni0702"
+      ],
+      "logoFile": "replaymod_logo.png",
+      "parent": "replaymod",
+      "screenshots": [],
+      "dependencies": []
+    }
+]

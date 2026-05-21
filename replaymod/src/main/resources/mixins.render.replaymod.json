@@ -1,0 +1,71 @@
+{
+  "required": true,
+  "package": "com.replaymod.render.mixin",
+  "mixins": [],
+  "server": [],
+  "client": [
+    //#if MC>=11800
+    //#if MC>=12002
+    //$$ "ChunkRenderingDataPreparerAccessor",
+    //#else
+    //$$ "ChunkInfoAccessor",
+    //#endif
+    //#endif
+    "Mixin_ChromaKeyColorSky",
+    "Mixin_ChromaKeyDisableFog",
+    "Mixin_ChromaKeyForceSky",
+    //#if MC>=12100
+    //$$ "Mixin_FakeSystemTimeUniforms_Iris",
+    //#endif
+    //#if MC>=12105
+    //$$ "Mixin_FixCopyTextureToBuffer_DepthTexture",
+    //#endif
+    "Mixin_ForceChunkLoading",
+    "Mixin_HideNameTags",
+    "Mixin_HideNameTags_LivingEntity",
+    "Mixin_HideNameTags_PlayerEntity",
+    "Mixin_Omnidirectional_Camera",
+    "Mixin_Omnidirectional_Rotation",
+    "Mixin_PreserveDepthDuringGuiRendering",
+    "Mixin_PreserveDepthDuringHandRendering",
+    "Mixin_SkipBlockOutlinesDuringRender",
+    "Mixin_SkipHudDuringRender",
+    "Mixin_StabilizeCamera",
+    "Mixin_Stereoscopic_Camera",
+    "Mixin_Stereoscopic_HandRenderPass",
+    "Mixin_SuppressFramebufferResizeDuringRender",
+    "Mixin_UseGuiFramebufferDuringGuiRendering",
+    //#if MC>=11600
+    "Mixin_AddIrisOdsShaderUniforms",
+    "Mixin_LoadIrisOdsShaderPack",
+    //#endif
+    //#if MC>=10800
+    //#if MC>=11500
+    "Mixin_BlockOnChunkRebuilds",
+    //#else
+    //$$ "ChunkRenderDispatcherAccessor",
+    //$$ "MixinChunkRenderWorker",
+    //#endif
+    //#endif
+    "GameRendererAccessor",
+    "MainWindowAccessor",
+    "WorldRendererAccessor",
+    //#if MC>=10904
+    "MixinParticleManager",
+    //#else
+    //$$ "MixinEffectRenderer",
+    //#endif
+    "MixinEntityRenderer",
+    //#if MC>=10800 && MC<11700
+    "MixinGlStateManager",
+    //#endif
+    //#if MC>=10800
+    //#else
+    //$$ "MixinOpenGlHelper",
+    //#endif
+    "MixinRenderManager"
+  ],
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.6.11",
+  "refmap": "mixins.replaymod.refmap.json"
+}
