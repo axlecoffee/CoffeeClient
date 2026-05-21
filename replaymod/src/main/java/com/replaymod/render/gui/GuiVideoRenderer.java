@@ -11,7 +11,6 @@ import de.johni0702.minecraft.gui.element.GuiButton;
 import de.johni0702.minecraft.gui.element.GuiCheckbox;
 import de.johni0702.minecraft.gui.element.GuiLabel;
 import de.johni0702.minecraft.gui.element.advanced.GuiProgressBar;
-import de.johni0702.minecraft.gui.function.Click;
 import de.johni0702.minecraft.gui.function.Tickable;
 import de.johni0702.minecraft.gui.layout.CustomLayout;
 import de.johni0702.minecraft.gui.layout.HorizontalLayout;
@@ -28,10 +27,8 @@ import net.minecraft.client.texture.NativeImage;
 
 import java.nio.ByteBuffer;
 
-import static de.johni0702.minecraft.gui.versions.MCVer.identifier;
-
 public class GuiVideoRenderer extends GuiScreen implements Tickable {
-    private static final Identifier NO_PREVIEW_TEXTURE = identifier("replaymod", "logo.png");
+    private static final Identifier NO_PREVIEW_TEXTURE = new Identifier("replaymod", "logo.png");
 
     private final VideoRenderer renderer;
 
@@ -68,8 +65,8 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         boolean waitingForConfirmation;
 
         @Override
-        public boolean mouseClick(Click click) {
-            boolean result = super.mouseClick(click);
+        public boolean mouseClick(ReadablePoint position, int button) {
+            boolean result = super.mouseClick(position, button);
             if (waitingForConfirmation && !result) {
                 setI18nLabel("replaymod.gui.rendering.cancel");
                 waitingForConfirmation = false;
@@ -78,8 +75,8 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         }
 
         @Override
-        public void onClick(Click click) {
-            super.onClick(click);
+        public void onClick() {
+            super.onClick();
             if (!waitingForConfirmation) {
                 setI18nLabel("replaymod.gui.rendering.cancel.callback");
                 waitingForConfirmation = true;
@@ -115,13 +112,7 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
                 size(contentPanel, width - 10, height - 10);
             }
         });
-        // FIXME default background doesn't work during rendering because the blur effect relies on the framebuffer
-        //#if MC>=12006
-        //$$ setBackground(Background.NONE);
-        //$$ setBackgroundColor(new de.johni0702.minecraft.gui.utils.lwjgl.Color(32, 32, 32));
-        //#else
         setBackground(Background.DIRT);
-        //#endif
     }
 
     public GuiVideoRenderer(VideoRenderer renderer) {
@@ -241,9 +232,7 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         final int videoHeight = videoSize.getHeight();
 
         if (previewTexture == null) {
-            //#if MC>=12105
-            //$$ previewTexture = new NativeImageBackedTexture((String) null, videoWidth, videoHeight, true);
-            //#elseif MC>=11400
+            //#if MC>=11400
             previewTexture = new NativeImageBackedTexture(videoWidth, videoHeight, true);
             //#else
             //$$ previewTexture = new DynamicTexture(videoWidth, videoHeight);
@@ -255,11 +244,7 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
             previewTextureDirty = false;
         }
 
-        //#if MC>=12105
-        //$$ guiRenderer.bindTexture(previewTexture.getGlTexture());
-        //#else
         guiRenderer.bindTexture(previewTexture.getGlId());
-        //#endif
         renderPreviewTexture(guiRenderer, size, videoWidth, videoHeight);
     }
 
@@ -300,10 +285,7 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
                         int g = buffer.get() & 0xff;
                         int r = buffer.get() & 0xff;
                         buffer.get(); // alpha
-                        //#if MC>=12102
-                        //$$ int value = 0xff << 24 | r << 16 | g << 8 |  b;
-                        //$$ data.setColorArgb(x, y, value);
-                        //#elseif MC>=11400
+                        //#if MC>=11400
                         int value = 0xff << 24 | b << 16 | g << 8 |  r;
                         data.setPixelColor(x, y, value); // actually takes ABGR, not RGBA
                         //#else

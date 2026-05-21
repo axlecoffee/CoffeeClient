@@ -5,15 +5,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-//#if MC>=12100
-//$$ import net.minecraft.util.crash.ReportType;
-//#endif
 
 public class SchedulerImpl implements  Scheduler {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
@@ -61,14 +55,11 @@ public class SchedulerImpl implements  Scheduler {
         private final Thread mcThread = Thread.currentThread();
 
         private ReplayModExecutor(String string_1) {
-            //#if MC >= 26.1
-            //$$ super(string_1, false);
-            //#else
             super(string_1);
-            //#endif
         }
 
-        @Override public Runnable createTask(Runnable runnable) {
+        @Override
+        protected Runnable createTask(Runnable runnable) {
             return runnable;
         }
 
@@ -88,13 +79,10 @@ public class SchedulerImpl implements  Scheduler {
         }
     }
     public final ReplayModExecutor executor = new ReplayModExecutor("Client/ReplayMod");
-    private final List<Runnable> delayedTasks = new ArrayList<>();
 
     @Override
     public void runTasks() {
         executor.runTasks();
-        delayedTasks.forEach(executor::send);
-        delayedTasks.clear();
     }
 
     @Override
@@ -109,8 +97,15 @@ public class SchedulerImpl implements  Scheduler {
     }
 
     private void runLater(Runnable runnable, Runnable defer) {
-        if (mc.isOnThread() && inRunLater) {
-            delayedTasks.add(defer);
+        if (mc.isOnThread() && inRunLater && !inRenderTaskQueue) {
+            ((MinecraftAccessor) mc).getRenderTaskQueue().offer(() -> {
+                inRenderTaskQueue = true;
+                try {
+                    defer.run();
+                } finally {
+                    inRenderTaskQueue = false;
+                }
+            });
         } else {
             executor.send(() -> {
                 inRunLater = true;
@@ -118,11 +113,7 @@ public class SchedulerImpl implements  Scheduler {
                     runnable.run();
                 } catch (CrashException e) {
                     e.printStackTrace();
-                    //#if MC>=12100
-                    //$$ System.err.println(e.getReport().asString(ReportType.MINECRAFT_CRASH_REPORT));
-                    //#else
                     System.err.println(e.getReport().asString());
-                    //#endif
                     mc.setCrashReport(e.getReport());
                 } finally {
                     inRunLater = false;

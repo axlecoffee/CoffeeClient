@@ -36,15 +36,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static de.johni0702.minecraft.gui.versions.MCVer.identifier;
-
-//#if MC>=12006
-//$$ import net.minecraft.resource.ResourcePackInfo;
-//$$ import net.minecraft.resource.ResourcePackSource;
-//$$ import net.minecraft.text.Text;
-//$$ import java.util.Optional;
-//#endif
-
 //#if MC>=11900
 //#else
 import net.minecraft.client.options.Option;
@@ -54,9 +45,9 @@ public class ReplayMod implements Module, Scheduler {
 
     public static final String MOD_ID = "replaymod";
 
-    public static final Identifier TEXTURE = identifier("replaymod", "replay_gui.png");
+    public static final Identifier TEXTURE = new Identifier("replaymod", "replay_gui.png");
     public static final int TEXTURE_SIZE = 256;
-    public static final Identifier LOGO_FAVICON = identifier("replaymod", "favicon_logo.png");
+    public static final Identifier LOGO_FAVICON = new Identifier("replaymod", "favicon_logo.png");
 
     private static final MinecraftClient mc = MCVer.getMinecraft();
 
@@ -88,7 +79,6 @@ public class ReplayMod implements Module, Scheduler {
     private boolean minimalMode;
 
     public ReplayMod(ReplayModBackend backend) {
-        System.out.println("CoffeeClient: ReplayMod called");
         this.backend = backend;
 
         I18n.setI18n(net.minecraft.client.resource.language.I18n::translate);
@@ -123,7 +113,6 @@ public class ReplayMod implements Module, Scheduler {
     public static final DirectoryResourcePack jGuiResourcePack = createJGuiResourcePack();
     public static final String JGUI_RESOURCE_PACK_NAME = "replaymod_jgui";
     private static DirectoryResourcePack createJGuiResourcePack() {
-        System.out.println("CoffeeDebug: createJGuiResourcePack called");
         File folder = new File("../jGui/src/main/resources");
         if (!folder.exists()) {
             folder = new File("../../../jGui/src/main/resources");
@@ -131,9 +120,7 @@ public class ReplayMod implements Module, Scheduler {
                 return null;
             }
         }
-        //#if MC>=12006
-        //$$ return new DirectoryResourcePack(new ResourcePackInfo(JGUI_RESOURCE_PACK_NAME, Text.literal("jGui"), ResourcePackSource.NONE, Optional.empty()), folder.toPath()) {
-        //#elseif MC>=11903
+        //#if MC>=11903
         //$$ return new DirectoryResourcePack(JGUI_RESOURCE_PACK_NAME, folder.toPath(), true) {
         //#else
         return new DirectoryResourcePack(folder) {
@@ -182,7 +169,6 @@ public class ReplayMod implements Module, Scheduler {
     }
 
     void initModules() {
-        System.out.println("CoffeeDebug: initModules called");
         modules.forEach(Module::initCommon);
         modules.forEach(Module::initClient);
         modules.forEach(m -> m.registerKeyBindings(keyBindingRegistry));
@@ -197,7 +183,6 @@ public class ReplayMod implements Module, Scheduler {
 
     @Override
     public void initClient() {
-        System.out.println("CoffeeDebug: initClient called");
         backgroundProcesses.register();
         keyBindingRegistry.register();
 
@@ -262,10 +247,6 @@ public class ReplayMod implements Module, Scheduler {
     }
 
     private void printToChat(boolean warning, String message, Object... args) {
-        if (!mc.isOnThread()) {
-            runLater(() -> printToChat(warning, message, args));
-            return;
-        }
         if (getSettingsRegistry().get(Setting.NOTIFICATIONS)) {
             // Some nostalgia: "§8[§6Replay Mod§8]§r Your message goes here"
             //#if MC>=10904

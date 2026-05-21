@@ -21,22 +21,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-//#if MC>=12106
-//$$ import net.minecraft.client.render.chunk.AbstractChunkRenderData;
-//$$ import org.spongepowered.asm.mixin.Mutable;
-//$$ import java.util.concurrent.Executor;
-//#endif
-
-//#if MC>=12105
-//$$ import org.spongepowered.asm.mixin.Mutable;
-//$$ import java.util.AbstractQueue;
-//$$ import java.util.Iterator;
-//#endif
-
-//#if MC>=12102
-//$$ import net.minecraft.util.thread.SimpleConsecutiveExecutor;
-//#endif
-
 //#if MC>=12003
 //$$ import net.minecraft.client.render.chunk.BlockBufferBuilderPool;
 //#endif
@@ -66,30 +50,16 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
     //$$         runnable.run();
     //$$         anything = true;
     //$$     }
-        //#if MC>=12106
-        //$$ AbstractChunkRenderData entry;
-        //$$     while ((entry = this.renderQueue.poll()) != null) {
-        //$$     entry.close();
-        //$$     anything = true;
-        //$$ }
-        //#endif
     //$$     return anything;
     //$$ }
     //#else
     @Shadow public abstract boolean upload();
     //#endif
 
-    //#if MC>=12102
-    //$$ @Shadow @Final private SimpleConsecutiveExecutor consecutiveExecutor;
-    //#else
     @Shadow @Final private TaskExecutor<Runnable> mailbox;
-    //#endif
 
     @Shadow protected abstract void scheduleRunTasks();
 
-    //#if MC>=12105
-    //$$ @Mutable
-    //#endif
     @Shadow @Final private Queue<Runnable> uploadQueue;
     private final Lock waitingForWorkLock = new ReentrantLock();
     private final Condition newWork = waitingForWorkLock.newCondition();
@@ -118,64 +88,6 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
         }
     }
 
-    //#if MC>=12106
-    //$$ @Shadow @Final @Mutable
-    //$$ Executor uploadExecutor;
-    //$$ @Shadow @Final @Mutable Queue<AbstractChunkRenderData> renderQueue;
-    //$$ @Inject(method = "<init>", at = @At("RETURN"))
-    //$$ private void notifyMainThreadOfNewUpload(CallbackInfo ci) {
-    //$$     Executor innerUploadExecutor = this.uploadExecutor;
-    //$$     this.uploadExecutor = runnable -> {
-    //$$         innerUploadExecutor.execute(runnable);
-    //$$         waitingForWorkLock.lock();
-    //$$         try {
-    //$$             newWork.signal();
-    //$$         } finally {
-    //$$             waitingForWorkLock.unlock();
-    //$$         }
-    //$$     };
-    //$$     Queue<AbstractChunkRenderData> innerRenderQueue = this.renderQueue;
-    //$$     this.renderQueue = new AbstractQueue<>() {
-    //$$         @Override
-    //$$         public boolean offer(AbstractChunkRenderData runnable) {
-    //$$             boolean result = innerRenderQueue.offer(runnable);
-    //$$             waitingForWorkLock.lock();
-    //$$             try {
-    //$$                 newWork.signal();
-    //$$             } finally {
-    //$$                 waitingForWorkLock.unlock();
-    //$$             }
-    //$$             return result;
-    //$$         }
-    //$$         @Override public AbstractChunkRenderData poll() { return innerRenderQueue.poll(); }
-    //$$         @Override public AbstractChunkRenderData peek() { return innerRenderQueue.peek(); }
-    //$$         @Override public int size() { return innerRenderQueue.size(); }
-    //$$         @Override public Iterator<AbstractChunkRenderData> iterator() { return innerRenderQueue.iterator(); }
-    //$$     };
-    //$$ }
-    //#elseif MC>=12105
-    //$$ @Inject(method = "<init>", at = @At("RETURN"))
-    //$$ private void notifyMainThreadOfNewUpload(CallbackInfo ci) {
-    //$$     Queue<Runnable> inner = this.uploadQueue;
-    //$$     this.uploadQueue = new AbstractQueue<>() {
-    //$$         @Override
-    //$$         public boolean offer(Runnable runnable) {
-    //$$             boolean result = inner.offer(runnable);
-    //$$             waitingForWorkLock.lock();
-    //$$             try {
-    //$$                 newWork.signal();
-    //$$             } finally {
-    //$$                 waitingForWorkLock.unlock();
-    //$$             }
-    //$$             return result;
-    //$$         }
-    //$$         @Override public Runnable poll() { return inner.poll(); }
-    //$$         @Override public Runnable peek() { return inner.peek(); }
-    //$$         @Override public int size() { return inner.size(); }
-    //$$         @Override public Iterator<Runnable> iterator() { return inner.iterator(); }
-    //$$     };
-    //$$ }
-    //#else
     @Inject(method = "scheduleUpload", at = @At("RETURN"))
     private void notifyMainThreadOfNewUpload(CallbackInfoReturnable<CompletableFuture<Void>> ci) {
         this.waitingForWorkLock.lock();
@@ -185,20 +97,12 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
             this.waitingForWorkLock.unlock();
         }
     }
-    //#endif
 
     private boolean waitForMainThreadWork() {
-        //#if MC>=12102
-        //$$ this.consecutiveExecutor.executeAsync(future -> {
-        //$$     scheduleRunTasks();
-        //$$     future.complete(getAvailableBufferCount() == this.totalBufferCount);
-        //$$ }).join();
-        //#else
         boolean allDone = this.mailbox.<Boolean>ask(reply -> () -> {
             scheduleRunTasks();
             reply.send(getAvailableBufferCount() == this.totalBufferCount);
         }).join();
-        //#endif
 
         if (allDone) {
             return true;
@@ -206,7 +110,6 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
             this.waitingForWorkLock.lock();
             try {
                 while (true) {
-                    //#if MC<11900
                     // Now, what is this call doing here you might be wondering. Well, from a quick look over everything
                     // it does not look like it would be required but have a **very** close look at [scheduleUpload]:
                     // It is not actually guaranteed to run the upload on the main thread, it just looks like it (and
@@ -220,7 +123,6 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
                     // dead-lock ourselves here (since the upload queue is already empty), if we did never do this call
                     // to run the upload scheduled via this particular path of code execution.
                     RenderSystem.replayQueue();
-                    //#endif
 
                     if (this.allDone) {
                         return true;

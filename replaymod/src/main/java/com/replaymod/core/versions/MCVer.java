@@ -10,16 +10,10 @@ import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.network.NetworkState;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.Vec3d;
-import org.lwjgl.opengl.GL11;
-
-//#if MC>=12105
-//$$ import net.minecraft.client.render.VertexConsumer;
-//#endif
 
 //#if MC>=11700
 //$$ import net.minecraft.util.math.Matrix4f;
@@ -103,9 +97,7 @@ import java.util.Optional;
  */
 public class MCVer {
     public static int getProtocolVersion() {
-        //#if MC>=12106
-        //$$ return SharedConstants.getProtocolVersion();
-        //#elseif MC>=11400
+        //#if MC>=11400
         return SharedConstants.getGameVersion().getProtocolVersion();
         //#else
         //$$ return RealmsSharedConstants.NETWORK_PROTOCOL_VERSION;
@@ -405,9 +397,7 @@ public class MCVer {
     }
 
     public static void pushMatrix() {
-        //#if MC>=12006
-        //$$ RenderSystem.getModelViewStack().pushMatrix();
-        //#elseif MC>=11700
+        //#if MC>=11700
         //$$ RenderSystem.getModelViewStack().push();
         //#else
         GlStateManager.pushMatrix();
@@ -416,14 +406,8 @@ public class MCVer {
 
     public static void popMatrix() {
         //#if MC>=11700
-        //#if MC>=12006
-        //$$ RenderSystem.getModelViewStack().popMatrix();
-        //#else
         //$$ RenderSystem.getModelViewStack().pop();
-        //#endif
-        //#if MC<12102
         //$$ RenderSystem.applyModelViewMatrix();
-        //#endif
         //#else
         GlStateManager.popMatrix();
         //#endif
@@ -447,22 +431,11 @@ public class MCVer {
     //$$ }
     //#endif
 
-    //#if MC>=12105
-    //$$ public static void emitLine(MatrixStack matrixStack, VertexConsumer buffer, Vector2f p1, Vector2f p2, int color, float lineWidth) {
-    //#else
-    public static void emitLine(MatrixStack matrixStack, BufferBuilder buffer, Vector2f p1, Vector2f p2, int color, float lineWidth) {
-    //#endif
-        emitLine(matrixStack, buffer, new Vector3f(p1.x, p1.y, 0), new Vector3f(p2.x, p2.y, 0), color, lineWidth);
+    public static void emitLine(BufferBuilder buffer, Vector2f p1, Vector2f p2, int color) {
+        emitLine(buffer, new Vector3f(p1.x, p1.y, 0), new Vector3f(p2.x, p2.y, 0), color);
     }
 
-    //#if MC>=12105
-    //$$ public static void emitLine(MatrixStack matrixStack, VertexConsumer buffer, Vector3f p1, Vector3f p2, int color, float lineWidth) {
-    //#else
-    public static void emitLine(MatrixStack matrixStack, BufferBuilder buffer, Vector3f p1, Vector3f p2, int color, float lineWidth) {
-    //#endif
-        //#if MC<12111
-        GL11.glLineWidth(lineWidth);
-        //#endif
+    public static void emitLine(BufferBuilder buffer, Vector3f p1, Vector3f p2, int color) {
         int r = color >> 24 & 0xff;
         int g = color >> 16 & 0xff;
         int b = color >> 8 & 0xff;
@@ -470,41 +443,23 @@ public class MCVer {
         //#if MC>=11700
         //$$ Vector3f n = Vector3f.sub(p2, p1, null);
         //#endif
-        //#if MC>=11600
-        buffer.vertex(matrixStack.peek().getModel(), p1.x, p1.y, p1.z)
-        //#else
-        //$$ buffer.vertex(p1.x, p1.y, p1.z)
-        //#endif
-                //#if MC>=12111
-                //$$ .lineWidth(lineWidth)
-                //#endif
+        buffer.vertex(p1.x, p1.y, p1.z)
                 .color(r, g, b, a)
                 //#if MC>=11700
                 //$$ .normal(n.x, n.y, n.z)
                 //#endif
-                ;
-        buffer.next();
-        //#if MC>=11600
-        buffer.vertex(matrixStack.peek().getModel(), p2.x, p2.y, p2.z)
-        //#else
-        //$$ buffer.vertex(p2.x, p2.y, p2.z)
-        //#endif
-                //#if MC>=12111
-                //$$ .lineWidth(lineWidth)
-                //#endif
+                .next();
+        buffer.vertex(p2.x, p2.y, p2.z)
                 .color(r, g, b, a)
                 //#if MC>=11700
                 //$$ .normal(n.x, n.y, n.z)
                 //#endif
-                ;
-        buffer.next();
+                .next();
     }
 
-    //#if MC<12105
     public static void bindTexture(Identifier id) {
         de.johni0702.minecraft.gui.versions.MCVer.bindTexture(id);
     }
-    //#endif
 
     //#if MC<10900
     //$$ public static class SoundEvent {}
@@ -549,11 +504,6 @@ public class MCVer {
     public static abstract class Keyboard {
         //#if MC>=11400
         public static final int KEY_LCONTROL = GLFW.GLFW_KEY_LEFT_CONTROL;
-        public static final int KEY_RCONTROL = GLFW.GLFW_KEY_RIGHT_CONTROL;
-        public static final int KEY_LSUPER = GLFW.GLFW_KEY_LEFT_SUPER;
-        public static final int KEY_RSUPER = GLFW.GLFW_KEY_RIGHT_SUPER;
-        public static final int LEFT_CTRL = Util.getOperatingSystem() == Util.OperatingSystem.OSX ? KEY_LSUPER : KEY_LCONTROL;
-        public static final int RIGHT_CTRL = Util.getOperatingSystem() == Util.OperatingSystem.OSX ? KEY_RSUPER : KEY_RCONTROL;
         public static final int KEY_LSHIFT = GLFW.GLFW_KEY_LEFT_SHIFT;
         public static final int KEY_ESCAPE = GLFW.GLFW_KEY_ESCAPE;
         public static final int KEY_HOME = GLFW.GLFW_KEY_HOME;
@@ -636,10 +586,12 @@ public class MCVer {
         //$$ public static final int KEY_Z = org.lwjgl.input.Keyboard.KEY_Z;
         //#endif
 
+        public static boolean hasControlDown() {
+            return Screen.hasControlDown();
+        }
+
         public static boolean isKeyDown(int keyCode) {
-            //#if MC>=12109
-            //$$ return InputUtil.isKeyPressed(getMinecraft().getWindow(), keyCode);
-            //#elseif MC>=11500
+            //#if MC>=11500
             return InputUtil.isKeyPressed(getMinecraft().getWindow().getHandle(), keyCode);
             //#else
             //#if MC>=11400

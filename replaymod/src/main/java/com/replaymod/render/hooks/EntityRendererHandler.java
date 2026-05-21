@@ -14,11 +14,6 @@ import de.johni0702.minecraft.gui.utils.EventRegistrations;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 
-//#if MC>=12111 && MC < 26.1
-//$$ import net.minecraft.client.render.CameraOverride;
-//$$ import org.joml.Vector3f;
-//#endif
-
 //#if MC>=11400
 import com.replaymod.core.events.PostRenderCallback;
 import com.replaymod.core.events.PreRenderCallback;
@@ -45,8 +40,6 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
     public boolean omnidirectional;
 
     private final long startTime;
-
-    private long fakeFinishTimeNano;
 
     public EntityRendererHandler(RenderSettings settings, RenderInfo renderInfo) {
         this.settings = settings;
@@ -78,7 +71,6 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
     }
 
     public void renderWorld(float partialTicks, long finishTimeNano) {
-        fakeFinishTimeNano = finishTimeNano;
         //#if MC>=11400
         PreRenderCallback.EVENT.invoker().preRender();
         //#else
@@ -93,35 +85,15 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
             GameRendererAccessor gameRenderer = (GameRendererAccessor) mc.gameRenderer;
             Screen orgScreen = mc.currentScreen;
             boolean orgPauseOnLostFocus = mc.options.pauseOnLostFocus;
-            //#if MC >= 26.1
-            //#elseif MC>=12106
-            //$$ boolean orgRenderHand = mc.gameRenderer.isRenderingPanorama();
-            //#else
             boolean orgRenderHand = gameRenderer.getRenderHand();
-            //#endif
             try {
                 mc.currentScreen = null; // do not want to render the current screen (that'd just be the progress gui)
                 mc.options.pauseOnLostFocus = false; // do not want the pause menu to open if the window is unfocused
                 if (omnidirectional) {
-                    // makes no sense, we wouldn't even know where to put it
-                    //#if MC >= 26.1
-                    //$$ mc.gameRenderer.getMainCamera().enablePanoramicMode();
-                    //#elseif MC>=12111
-                    //$$ mc.gameRenderer.setCameraOverride(new CameraOverride(new Vector3f(mc.gameRenderer.getCamera().getHorizontalPlane())));
-                    //#elseif MC>=12106
-                    //$$ mc.gameRenderer.setRenderingPanorama(false);
-                    //#else
-                    gameRenderer.setRenderHand(false);
-                    //#endif
+                    gameRenderer.setRenderHand(false); // makes no sense, we wouldn't even know where to put it
                 }
 
-                //#if MC >= 26.1
-                //$$ mc.gameRenderer.update(mc.getDeltaTracker(), true);
-                //$$ mc.gameRenderer.extract(mc.getDeltaTracker(), true);
-                //$$ mc.gameRenderer.render(mc.getDeltaTracker(), true);
-                //#elseif MC>=12100
-                //$$ mc.gameRenderer.render(mc.getRenderTickCounter(), true);
-                //#elseif MC>=11400
+                //#if MC>=11400
                 mc.gameRenderer.render(partialTicks, finishTimeNano, true);
                 //#else
                 //$$ mc.setIngameNotInFocus(); // this should already be the case but it somehow still sometimes is not
@@ -134,15 +106,7 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
             } finally {
                 mc.currentScreen = orgScreen;
                 mc.options.pauseOnLostFocus = orgPauseOnLostFocus;
-                //#if MC >= 26.1
-                //$$ mc.gameRenderer.getMainCamera().disablePanoramicMode();
-                //#elseif MC>=12111
-                //$$ mc.gameRenderer.setCameraOverride(null);
-                //#elseif MC>=12106
-                //$$ mc.gameRenderer.setRenderingPanorama(orgRenderHand);
-                //#else
                 gameRenderer.setRenderHand(orgRenderHand);
-                //#endif
             }
         }
 
@@ -174,10 +138,6 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
 
     public RenderInfo getRenderInfo() {
         return this.renderInfo;
-    }
-
-    public long getFakeFinishTimeNano() {
-        return fakeFinishTimeNano;
     }
 
     public interface IEntityRenderer {

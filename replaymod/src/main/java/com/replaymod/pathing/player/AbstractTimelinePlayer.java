@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.replaymod.core.mixin.MinecraftAccessor;
 import com.replaymod.core.mixin.TimerAccessor;
+import com.replaymod.core.utils.WrappedTimer;
 import com.replaymod.replay.ReplayHandler;
 import com.replaymod.replaystudio.pathing.path.Keyframe;
 import com.replaymod.replaystudio.pathing.path.Path;
@@ -19,7 +20,6 @@ import net.minecraft.client.render.RenderTickCounter;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 
-import static com.replaymod.core.utils.Utils.DEFAULT_MS_PER_TICK;
 import static com.replaymod.core.versions.MCVer.*;
 
 /**
@@ -31,11 +31,6 @@ public abstract class AbstractTimelinePlayer extends EventRegistrations {
     private Timeline timeline;
     protected long startOffset;
     private boolean wasAsyncMode;
-    //#if MC>=12100
-    //$$ private RenderTickCounter.Dynamic orgTimer;
-    //#else
-    private RenderTickCounter orgTimer;
-    //#endif
     private long lastTime;
     private long lastTimestamp;
     private ListenableFuture<Void> future;
@@ -81,14 +76,13 @@ public abstract class AbstractTimelinePlayer extends EventRegistrations {
         lastTime = 0;
 
         MinecraftAccessor mcA = (MinecraftAccessor) mc;
-        orgTimer = mcA.getTimer();
-        ReplayTimer timer = new ReplayTimer();
+        ReplayTimer timer = new ReplayTimer(mcA.getTimer());
         mcA.setTimer(timer);
 
         //noinspection ConstantConditions
         TimerAccessor timerA = (TimerAccessor) timer;
         //#if MC>=11200
-        timerA.setTickLength(DEFAULT_MS_PER_TICK);
+        timerA.setTickLength(WrappedTimer.DEFAULT_MS_PER_TICK);
         timer.tickDelta = timer.ticksThisFrame = 0;
         //#else
         //$$ timer.timerSpeed = 1;
@@ -109,7 +103,7 @@ public abstract class AbstractTimelinePlayer extends EventRegistrations {
     public void onTick() {
         if (future.isDone()) {
             MinecraftAccessor mcA = (MinecraftAccessor) mc;
-            mcA.setTimer(orgTimer);
+            mcA.setTimer(((ReplayTimer) mcA.getTimer()).getWrapped());
             replayHandler.getReplaySender().setReplaySpeed(0);
             if (wasAsyncMode) {
                 replayHandler.getReplaySender().setAsyncMode(true);

@@ -23,6 +23,8 @@ import java.io.InputStream;
 import org.objectweb.asm.tree.ClassNode;
 //#else
 //$$ import org.spongepowered.asm.lib.tree.ClassNode;
+//#endif
+//#if MC<10900
 //$$ import com.replaymod.coffeeclient.hook.mixin.CoffeeMixinBootstrap;
 //#endif
 
@@ -65,7 +67,7 @@ public class ReplayModMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        //#if MC<11200
+        //#if MC<10900
         //$$ CoffeeMixinBootstrap.onLoad(mixinPackage);
         //#endif
     }
@@ -82,7 +84,7 @@ public class ReplayModMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public List<String> getMixins() {
-        //#if MC<11200
+        //#if MC<10900
         //$$ return CoffeeMixinBootstrap.getMixins();
         //#else
         return null;

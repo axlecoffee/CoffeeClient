@@ -5,7 +5,6 @@ import com.replaymod.render.hooks.EntityRendererHandler;
 import com.replaymod.replay.camera.CameraEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -47,11 +46,7 @@ public abstract class Mixin_StabilizeCamera {
     //#endif
     private void replayModRender_beforeSetupCameraTransform(
             //#if MC>=11400
-            //#if MC>=12111
-            //$$ World blockView,
-            //#else
             BlockView blockView,
-            //#endif
             Entity entity,
             boolean thirdPerson,
             boolean inverseView,
@@ -111,11 +106,7 @@ public abstract class Mixin_StabilizeCamera {
     //#endif
     private void replayModRender_afterSetupCameraTransform(
             //#if MC>=11400
-            //#if MC>=12111
-            //$$ World blockView,
-            //#else
             BlockView blockView,
-            //#endif
             Entity entity,
             boolean thirdPerson,
             boolean inverseView,

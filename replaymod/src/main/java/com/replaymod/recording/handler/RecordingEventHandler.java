@@ -12,6 +12,7 @@ import net.minecraft.network.packet.s2c.play.BlockBreakingProgressS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityAnimationS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityAttachS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityEquipmentUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntitySetHeadYawS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
@@ -26,13 +27,6 @@ import net.minecraft.server.integrated.IntegratedServer;
 //$$ import net.minecraftforge.event.entity.player.PlayerSleepInBedEvent;
 //$$ import net.minecraftforge.eventbus.api.SubscribeEvent;
 //$$ import net.minecraftforge.event.entity.player.PlayerEvent.ItemPickupEvent;
-//#endif
-
-//#if MC>=12102
-//$$ import net.minecraft.entity.player.PlayerPosition;
-//$$ import net.minecraft.network.packet.s2c.play.EntityPositionSyncS2CPacket;
-//#else
-import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
 //#endif
 
 //#if MC>=12002
@@ -79,12 +73,7 @@ public class RecordingEventHandler extends EventRegistrations {
     private final PacketListener packetListener;
 
     private Double lastX, lastY, lastZ;
-    //#if MC>=10904
-    private static final int EQUIPMENT_SLOTS = EquipmentSlot.values().length;
-    //#else
-    //$$ private static final int EQUIPMENT_SLOTS = 5;
-    //#endif
-    private final List<ItemStack> playerItems = DefaultedList.ofSize(EQUIPMENT_SLOTS, ItemStack.EMPTY);
+    private final List<ItemStack> playerItems = DefaultedList.ofSize(6, ItemStack.EMPTY);
     private int ticksSinceLastCorrection;
     private boolean wasSleeping;
     private int lastRiding = -1;
@@ -119,21 +108,7 @@ public class RecordingEventHandler extends EventRegistrations {
         try {
             ClientPlayerEntity player = mc.player;
             assert player != null;
-            //#if MC>=12100
-            //$$ packetListener.save(new EntitySpawnS2CPacket(
-            //$$         player.getId(),
-            //$$         player.getUuid(),
-            //$$         player.getX(),
-            //$$         player.getY(),
-            //$$         player.getZ(),
-            //$$         player.getPitch(),
-            //$$         player.getYaw(),
-            //$$         player.getType(),
-            //$$         0,
-            //$$         player.getVelocity(),
-            //$$         player.getHeadYaw()
-            //$$ ));
-            //#elseif MC>=12002
+            //#if MC>=12002
             //$$ packetListener.save(new EntitySpawnS2CPacket(player));
             //#else
             packetListener.save(new PlayerSpawnS2CPacket(player));
@@ -203,9 +178,7 @@ public class RecordingEventHandler extends EventRegistrations {
 
             Packet packet;
             if (force || Math.abs(dx) > maxRelDist || Math.abs(dy) > maxRelDist || Math.abs(dz) > maxRelDist) {
-                //#if MC>=12102
-                //$$ packet = new EntityPositionSyncS2CPacket(player.getId(), PlayerPosition.fromEntity(player), player.isOnGround());
-                //#elseif MC>=10800
+                //#if MC>=10800
                 packet = new EntityPositionS2CPacket(player);
                 //#else
                 //$$ // In 1.7.10 the client player entity has its posY at eye height
@@ -306,7 +279,7 @@ public class RecordingEventHandler extends EventRegistrations {
                 ItemStack stack = player.getEquippedStack(slot);
                 int index = slot.ordinal();
             //#else
-            //$$ for (int slot = 0; slot < EQUIPMENT_SLOTS; slot++) {
+            //$$ for (int slot = 0; slot < 5; slot++) {
             //$$     ItemStack stack = player.getEquipmentInSlot(slot);
             //$$     int index = slot;
             //#endif

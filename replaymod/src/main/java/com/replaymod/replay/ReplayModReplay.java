@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.replaymod.core.KeyBindingRegistry;
 import com.replaymod.core.Module;
 import com.replaymod.core.ReplayMod;
+import com.replaymod.core.mixin.MinecraftAccessor;
 import com.replaymod.core.utils.ModCompat;
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.core.versions.MCVer.Keyboard;
@@ -19,7 +20,6 @@ import com.replaymod.replay.gui.screen.GuiModCompatWarning;
 import com.replaymod.replay.handler.GuiHandler;
 import com.replaymod.replaystudio.data.Marker;
 import com.replaymod.replaystudio.replay.ReplayFile;
-import de.johni0702.minecraft.gui.function.Click;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.KeyBinding;
 import org.apache.logging.log4j.LogManager;
@@ -117,7 +117,7 @@ public class ReplayModReplay implements Module {
             @Override
             public void run() {
                 if (replayHandler != null) {
-                    replayHandler.getOverlay().playPauseButton.onClick(new Click(-1, -1, 0, 0));
+                    replayHandler.getOverlay().playPauseButton.onClick();
                 }
             }
         }, true);
@@ -151,6 +151,9 @@ public class ReplayModReplay implements Module {
                 return new VanillaCameraController(core.getMinecraft(), cameraEntity);
             }
         });
+
+        MinecraftAccessor mc = (MinecraftAccessor) core.getMinecraft();
+        mc.setTimer(new InputReplayTimer(mc.getTimer(), this));
 
         new GuiHandler(this).register();
     }

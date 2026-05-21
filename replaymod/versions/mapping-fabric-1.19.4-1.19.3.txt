@@ -1,2 +1,0 @@
-net.minecraft.client.gui.widget.Widget setX() net.minecraft.client.gui.widget.ClickableWidget setX()
-net.minecraft.client.gui.widget.Widget setY() net.minecraft.client.gui.widget.ClickableWidget setY()

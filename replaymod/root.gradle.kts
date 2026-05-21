@@ -1,43 +1,31 @@
 import groovy.json.JsonOutput
 import java.io.ByteArrayOutputStream
-import org.gradle.kotlin.dsl.support.serviceOf
-import org.gradle.process.ExecOperations
 
 plugins {
-    id("gg.essential.multi-version.root")
-    id("gg.essential.loom") version "1.15.48" apply false
-    kotlin("jvm") version "2.3.20" apply false
+    id("fabric-loom") version "0.11-SNAPSHOT" apply false
+    id("com.replaymod.preprocess") version "48e02ad"
     id("com.github.hierynomus.license") version "0.15.0"
 }
 
 val latestVersion = file("version.txt").readLines().first()
-var releaseCommit = providers.exec {
-    commandLine("git", "blame", "-p", "-l", "version.txt")
-}.standardOutput.asText.map { it.trim().split("/n").first().split(" ").first() }.get()
+var releaseCommit = command("git", "blame", "-p", "-l", "version.txt").first().split(" ").first()
 if (latestVersion == "2.1.0") { // First version since change from tag-based
     releaseCommit = "35ac26e91689ac9bdf12dbb9902c452464a75108" // git rev-parse 1.12.2-2.1.0
 }
-val currentCommit = providers.exec {
-    commandLine("git", "rev-parse", "HEAD")
-}.standardOutput.asText.map { it.trim().split("/n").first() }.get()
-if (releaseCommit == currentCommit) {
+val currentCommit = command("git", "rev-parse", "HEAD").first()
+if (releaseCommit == currentCommit || releaseCommit.all { it == '0' }) {
     version = latestVersion
 } else {
-    val diff = providers.exec {
-        commandLine("git", "log", "--format=oneline", "$releaseCommit..$currentCommit")
-    }.standardOutput.asText.map { it.trim().split("/n").size }.get()
+    val diff = command("git", "log", "--format=oneline", "$releaseCommit..$currentCommit").size
     version = "$latestVersion-$diff-g${currentCommit.substring(0, 7)}"
 }
-val dirty = providers.exec {
-    commandLine("git", "describe", "--always", "--dirty=*")
-}.standardOutput.asText.map { it.trim().endsWith("*") }.get()
-if (dirty) {
+if (gitDescribe().endsWith("*")) {
     version = "$version-dirty"
 }
 
 group = "com.replaymod"
 
-val bundleJar by tasks.registering(Copy::class) {
+val bundleJar by tasks.creating(Copy::class) {
     into("$buildDir/libs")
 }
 
@@ -47,26 +35,30 @@ subprojects {
             maven("https://jitpack.io")
         }
     }
-    if (name == "jGui" || name == "ReplayStudio") {
-        return@subprojects
-    }
-    val (major, minor, patch) = name.split("-")[0].split(".") + listOf("0")
-    val mcVersion = major.toInt() * 10000 + minor.toInt() * 100 + patch.toInt()
-    val fabric = mcVersion >= 1_14_00 && !name.endsWith("-forge")
-    extra.set("loom.platform", if (fabric) "fabric" else "forge")
 
     afterEvaluate {
         val projectBundleJar = project.tasks.findByName("bundleJar")
         if (projectBundleJar != null && projectBundleJar.hasProperty("archivePath") && project.name != "core") {
-            bundleJar.configure {
-                dependsOn(projectBundleJar)
-                from(projectBundleJar.withGroovyBuilder { getProperty("archivePath") })
-            }
+            bundleJar.dependsOn(projectBundleJar)
+            bundleJar.from(projectBundleJar.withGroovyBuilder { getProperty("archivePath") })
         }
     }
 }
 
-fun ExecOperations.command(vararg cmd: String): List<String> {
+fun gitDescribe(): String {
+    try {
+        val stdout = ByteArrayOutputStream()
+        exec {
+            commandLine("git", "describe", "--always", "--dirty=*")
+            standardOutput = stdout
+        }
+        return stdout.toString().trim()
+    } catch (e: Throwable) {
+        return "unknown"
+    }
+}
+
+fun command(vararg cmd: Any): List<String> {
     val stdout = ByteArrayOutputStream()
     exec {
         commandLine(*cmd)
@@ -75,10 +67,7 @@ fun ExecOperations.command(vararg cmd: String): List<String> {
     return stdout.toString().trim().split("\n")
 }
 
-fun generateVersionsJson(execOps: ExecOperations): Map<String, Any> {
-    fun command(vararg cmd: String): List<String> =
-        execOps.command(*cmd)
-
+fun generateVersionsJson(): Map<String, Any> {
     val versionComparator = compareBy<String>(
         { (it.split(".").getOrNull(0) ?: "0").toInt() },
         { (it.split(".").getOrNull(1) ?: "0").toInt() },
@@ -102,11 +91,8 @@ fun generateVersionsJson(execOps: ExecOperations): Map<String, Any> {
                 .filter { it != "core" }
                 // Internal project used to automatically remap from Forge 1.12.2 to Fabric 1.14.4
                 .filter { it != "1.14.4-forge" }
-                // We dropped 1.8 with the switch to archloom but still kept its source in case someone
-                // volunteers to make it build again
-                .filterNot { it == "1.8" && versionComparator.compare(version, "2.6.16") >= 0 }
                 // We dropped 1.7.10 with the Gradle 7 update but still kept its source in case someone
-                // volunteers to ~~update FG 1.2 to Gradle 7~~ make it work with archloom.
+                // volunteers to update FG 1.2 to Gradle 7.
                 .filterNot { it == "1.7.10" && versionComparator.compare(version, "2.6.0") >= 0 }
         val versions = mcVersions.map { "$it-$version" }.toMutableList()
         when (version) {
@@ -150,24 +136,18 @@ fun generateVersionsJson(execOps: ExecOperations): Map<String, Any> {
 }
 
 val writeVersionsJson by tasks.registering {
-    val execOps = project.serviceOf<ExecOperations>()
     doLast {
-        val versionsRoot = generateVersionsJson(execOps)
+        val versionsRoot = generateVersionsJson()
         val versionsJson = JsonOutput.prettyPrint(JsonOutput.toJson(versionsRoot))
         File("versions.json").writeText(versionsJson)
     }
 }
 
 val doRelease by tasks.registering {
-    val execOps = project.serviceOf<ExecOperations>()
-
     doLast {
-        fun command(vararg cmd: String): List<String> =
-            execOps.command(*cmd)
-
         // Parse version
         val version = project.extra["releaseVersion"] as String
-        if (command("git", "describe", "--always", "--dirty=*").first().endsWith("*")) {
+        if (gitDescribe().endsWith("*")) {
             throw InvalidUserDataException("Git working tree is dirty. Make sure to commit all changes.")
         }
         val (modVersion, preVersion) = if ("-b" in version) {
@@ -192,7 +172,7 @@ val doRelease by tasks.registering {
         command("git", "commit", "-m", commitMessage)
 
         // Generate versions.json content
-        val versionsRoot = generateVersionsJson(execOps)
+        val versionsRoot = generateVersionsJson()
         val versionsJson = JsonOutput.prettyPrint(JsonOutput.toJson(versionsRoot))
 
         // Switch to master branch to update versions.json
@@ -202,28 +182,17 @@ val doRelease by tasks.registering {
         File("versions.json").writeText(versionsJson)
 
         // Commit changes
-        command("git", "add", "versions.json")
-        command("git", "commit", "-m", "Update versions.json for $version")
+        project.exec { commandLine("git", "add", "versions.json") }
+        project.exec { commandLine("git", "commit", "-m", "Update versions.json for $version") }
 
         // Return to previous branch
-        command("git", "checkout", "-")
+        project.exec { commandLine("git", "checkout", "-") }
     }
 }
 
 defaultTasks("bundleJar")
 
 preprocess {
-    strictExtraMappings.set(true)
-
-    val mc26_01_00 = createNode("26.1", 26_01_00, "yarn")
-    val mc12111 = createNode("1.21.11", 12111, "yarn")
-    val mc12110 = createNode("1.21.10", 12110, "yarn")
-    val mc12107 = createNode("1.21.7", 12107, "yarn")
-    val mc12105 = createNode("1.21.5", 12105, "yarn")
-    val mc12104 = createNode("1.21.4", 12104, "yarn")
-    val mc12102 = createNode("1.21.2", 12102, "yarn")
-    val mc12100 = createNode("1.21", 12100, "yarn")
-    val mc12006 = createNode("1.20.6", 12006, "yarn")
     val mc12004 = createNode("1.20.4", 12004, "yarn")
     val mc12002 = createNode("1.20.2", 12002, "yarn")
     val mc12001 = createNode("1.20.1", 12001, "yarn")
@@ -251,38 +220,29 @@ preprocess {
     val mc10800 = createNode("1.8", 10800, "srg")
     val mc10710 = createNode("1.7.10", 10710, "srg")
 
-    mc26_01_00.link(mc12111, file("versions/mapping-fabric-26.1-1.21.11.txt"))
-    mc12111.link(mc12110, file("versions/mapping-fabric-1.21.11-1.21.10.txt"))
-    mc12110.link(mc12107, file("versions/mapping-fabric-1.21.10-1.21.7.txt"))
-    mc12107.link(mc12105)
-    mc12105.link(mc12104, file("versions/mapping-fabric-1.21.5-1.21.4.txt"))
-    mc12104.link(mc12102)
-    mc12102.link(mc12100)
-    mc12100.link(mc12006)
-    mc12006.link(mc12004)
     mc12004.link(mc12002, file("versions/mapping-fabric-1.20.4-1.20.2.txt"))
     mc12002.link(mc12001)
-    mc12001.link(mc11904, file("versions/mapping-fabric-1.20.1-1.19.4.txt"))
-    mc11904.link(mc11903, file("versions/mapping-fabric-1.19.4-1.19.3.txt"))
+    mc12001.link(mc11904)
+    mc11904.link(mc11903)
     mc11903.link(mc11902, file("versions/mapping-fabric-1.19.3-1.19.2.txt"))
     mc11902.link(mc11901)
     mc11901.link(mc11900)
-    mc11900.link(mc11802)
+    mc11900.link(mc11802, file("versions/mapping-fabric-1.19-1.18.2.txt"))
     mc11802.link(mc11801)
     mc11801.link(mc11701, file("versions/mapping-fabric-1.18.1-1.17.1.txt"))
     mc11701.link(mc11604, file("versions/mapping-fabric-1.17.1-1.16.4.txt"))
     mc11604.link(mc11601)
-    mc11601.link(mc11502)
+    mc11601.link(mc11502, file("versions/mapping-fabric-1.16.1-1.15.2.txt"))
     mc11502.link(mc11404, file("versions/mapping-fabric-1.15.2-1.14.4.txt"))
-    mc11404.link(mc11404Forge)
-    mc11404Forge.link(mc11202, file("versions/mapping-forge-1.14.4-1.12.2.txt"))
+    mc11404.link(mc11404Forge, file("versions/mapping-1.14.4-fabric-forge.txt"))
+    mc11404Forge.link(mc11202, file("versions/1.14.4-forge/mapping.txt"))
     mc11202.link(mc11201)
     mc11201.link(mc11200)
-    mc11200.link(mc11102)
-    mc11102.link(mc11100)
-    mc11100.link(mc11002)
+    mc11200.link(mc11102, file("versions/1.12/mapping.txt"))
+    mc11102.link(mc11100, file("versions/1.11.2/mapping.txt"))
+    mc11100.link(mc11002, file("versions/1.11/mapping.txt"))
     mc11002.link(mc10904)
-    mc10904.link(mc10809, file("versions/mapping-forge-1.9.4-1.8.9.txt"))
-    mc10809.link(mc10800, file("versions/mapping-forge-1.8.9-1.8.txt"))
-    mc10800.link(mc10710, file("versions/mapping-forge-1.8-1.7.10.txt"))
+    mc10904.link(mc10809, file("versions/1.9.4/mapping.txt"))
+    mc10809.link(mc10800, file("versions/1.8.9/mapping.txt"))
+    mc10800.link(mc10710, file("versions/1.8/mapping.txt"))
 }

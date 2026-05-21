@@ -23,15 +23,6 @@ import static com.replaymod.core.versions.MCVer.resizeMainWindow;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
-//#if MC>=12105
-//#if MC<12106
-//$$ import com.mojang.blaze3d.buffers.BufferType;
-//$$ import com.mojang.blaze3d.buffers.BufferUsage;
-//#endif
-//$$ import com.mojang.blaze3d.buffers.GpuBuffer;
-//$$ import com.mojang.blaze3d.systems.GpuDevice;
-//#endif
-
 public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData> implements FrameCapturer<F> {
     protected final WorldRenderer worldRenderer;
     protected final RenderInfo renderInfo;
@@ -90,30 +81,20 @@ public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData
         resizeMainWindow(mc, getFrameWidth(), getFrameHeight());
 
         pushMatrix();
-        //#if MC<12105
         frameBuffer().beginWrite(true);
-        //#endif
 
-        //#if MC>=12105
-        //$$ RenderSystem.getDevice()
-        //$$         .createCommandEncoder()
-        //$$         .clearColorAndDepthTextures(mc.getFramebuffer().getColorAttachment(), 0, mc.getFramebuffer().getDepthAttachment(), 1);
-        //#else
         GlStateManager.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
-                //#if MC>=11400 && MC<12102
+                //#if MC>=11400
                 , false
                 //#endif
         );
-        //#endif
         //#if MC<11904
         GlStateManager.enableTexture();
         //#endif
 
         worldRenderer.renderWorld(partialTicks, captureData);
 
-        //#if MC<12105
         frameBuffer().endWrite();
-        //#endif
         popMatrix();
 
         return captureFrame(frameId, captureData);
@@ -121,27 +102,9 @@ public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData
 
     protected OpenGlFrame captureFrame(int frameId, D captureData) {
         ByteBuffer buffer = ByteBufferPool.allocate(getFrameWidth() * getFrameHeight() * 4);
-        //#if MC>=12105
-        //$$ GpuDevice device = RenderSystem.getDevice();
-        //#if MC>=12106
-        //$$ try (GpuBuffer gpuBuffer = device.createBuffer(null, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ, getFrameWidth() * getFrameHeight() * 4)) {
-        //#else
-        //$$ try (GpuBuffer gpuBuffer = device.createBuffer(null, BufferType.PIXEL_PACK, BufferUsage.STATIC_READ, getFrameWidth() * getFrameHeight() * 4)) {
-        //#endif
-        //$$     device.createCommandEncoder().copyTextureToBuffer(frameBuffer().getColorAttachment(), gpuBuffer, 0, () -> {}, 0);
-            //#if MC>=12106
-            //$$ try (GpuBuffer.MappedView view = device.createCommandEncoder().mapBuffer(gpuBuffer, true, false)) {
-            //#else
-            //$$ try (GpuBuffer.ReadView view = device.createCommandEncoder().readBuffer(gpuBuffer)) {
-            //#endif
-        //$$         buffer.put(view.data());
-        //$$     }
-        //$$ }
-        //#else
         frameBuffer().beginWrite(true);
         GL11.glReadPixels(0, 0, getFrameWidth(), getFrameHeight(), GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
         frameBuffer().endWrite();
-        //#endif
         buffer.rewind();
 
         return new OpenGlFrame(frameId, new Dimension(getFrameWidth(), getFrameHeight()), 4, buffer);

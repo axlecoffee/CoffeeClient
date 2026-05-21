@@ -30,24 +30,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.lwjgl.opengl.GL11;
 
-//#if MC>=12111
-//$$ import net.minecraft.client.render.RenderLayers;
-//#endif
-
-//#if MC>=12105
-//$$ import net.minecraft.client.render.RenderLayer;
-//$$ import net.minecraft.client.render.VertexConsumer;
-//$$ import net.minecraft.client.render.VertexConsumerProvider;
-//#else
-import static com.replaymod.core.versions.MCVer.bindTexture;
-//#endif
-
-//#if MC>=12102
-//#if MC<12105
-//$$ import net.minecraft.client.gl.ShaderProgramKeys;
-//#endif
-//#endif
-
 //#if MC>=11700
 //$$ import net.minecraft.client.render.GameRenderer;
 //#endif
@@ -60,13 +42,13 @@ import java.util.Comparator;
 import java.util.Optional;
 
 import static com.replaymod.core.ReplayMod.TEXTURE;
+import static com.replaymod.core.versions.MCVer.bindTexture;
 import static com.replaymod.core.versions.MCVer.emitLine;
 import static com.replaymod.core.versions.MCVer.popMatrix;
 import static com.replaymod.core.versions.MCVer.pushMatrix;
-import static de.johni0702.minecraft.gui.versions.MCVer.identifier;
 
 public class PathPreviewRenderer extends EventRegistrations {
-    private static final Identifier CAMERA_HEAD = identifier("replaymod", "camera_head.png");
+    private static final Identifier CAMERA_HEAD = new Identifier("replaymod", "camera_head.png");
     private static final MinecraftClient mc = MCVer.getMinecraft();
 
     private static final int SLOW_PATH_COLOR = 0xffcccc;
@@ -126,14 +108,8 @@ public class PathPreviewRenderer extends EventRegistrations {
             //#endif
 
             //#if MC>=11700
-            //#if MC>=12006
-            //$$ RenderSystem.getModelViewStack().mul(matrixStack.peek().getPositionMatrix());
-            //#else
             //$$ RenderSystem.getModelViewStack().method_34425(matrixStack.peek().getModel());
-            //#endif
-            //#if MC<12102
             //$$ RenderSystem.applyModelViewMatrix();
-            //#endif
             //#elseif MC>=11500
             RenderSystem.multMatrix(matrixStack.peek().getModel());
             //#endif
@@ -186,11 +162,9 @@ public class PathPreviewRenderer extends EventRegistrations {
                 }
             }
 
-            //#if MC<12105
             GL11.glEnable(GL11.GL_BLEND);
             GL11.glBlendFunc(GL11.GL_DST_COLOR, GL11.GL_SRC_COLOR);
             GL11.glDisable(GL11.GL_DEPTH_TEST);
-            //#endif
             //#if MC<11700
             GL11.glEnable(GL11.GL_TEXTURE_2D);
             //#endif
@@ -203,10 +177,8 @@ public class PathPreviewRenderer extends EventRegistrations {
                     .sorted(new KeyframeComparator(viewPos)) // Need to render the furthest first
                     .forEachOrdered(p -> drawPoint(viewPos, p.getRight(), p.getLeft()));
 
-            //#if MC<12105
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
             GL11.glEnable(GL11.GL_DEPTH_TEST);
-            //#endif
 
             int time = guiPathing.timeline.getCursorPosition();
             Optional<Integer> entityId = path.getValue(SpectatorProperty.PROPERTY, time);
@@ -231,12 +203,10 @@ public class PathPreviewRenderer extends EventRegistrations {
             }
         } finally {
             popMatrix();
-            //#if MC<12105
             //#if MC>=11700
             //$$ GL11.glDisable(GL11.GL_BLEND);
             //#else
             GL11.glPopAttrib();
-            //#endif
             //#endif
         }
     }
@@ -271,55 +241,26 @@ public class PathPreviewRenderer extends EventRegistrations {
         if (distanceSquared(view, pos1) > renderDistanceSquared) return;
         if (distanceSquared(view, pos2) > renderDistanceSquared) return;
 
-        //#if MC>=12105
-        //$$ VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        //$$ immediate.draw();
-        //#if MC>=12111
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayers.LINES);
-        //#else
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayer.LINES);
-        //#endif
-        //#else
         Tessellator tessellator = Tessellator.getInstance();
-        //#if MC>=12100
-        //$$ BufferBuilder buffer = tessellator.begin(net.minecraft.client.render.VertexFormat.DrawMode.LINES, VertexFormats.LINES);
-        //#else
         BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(GL11.GL_LINES, VertexFormats.POSITION_COLOR);
-        //#endif
-        //#endif
 
-        emitLine(new MatrixStack(), buffer, Vector3f.sub(pos1, view, null), Vector3f.sub(pos2, view, null), color, 3f);
+        emitLine(buffer, Vector3f.sub(pos1, view, null), Vector3f.sub(pos2, view, null), color);
 
-        //#if MC>=12105
-        //$$ immediate.draw();
-        //#else
         //#if MC>=11700
-        //#if MC>=12102
-        //$$ RenderSystem.setShader(ShaderProgramKeys.RENDERTYPE_LINES);
-        //#else
         //$$ RenderSystem.setShader(GameRenderer::getRenderTypeLinesShader);
-        //#endif
         //$$ RenderSystem.disableCull();
         //#endif
-        //#if MC>=12100
-        //$$ try (var builtBuffer = buffer.end()) {
-        //$$     net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(builtBuffer);
-        //$$ }
-        //#else
+        GL11.glLineWidth(3);
         tessellator.draw();
-        //#endif
         //#if MC>=11700
         //$$ RenderSystem.enableCull();
-        //#endif
         //#endif
     }
 
     private void drawPoint(Vector3f view, Vector3f pos, Keyframe keyframe) {
 
-        //#if MC<12105
         bindTexture(TEXTURE);
-        //#endif
 
         float posX = 80f / ReplayMod.TEXTURE_SIZE;
         float posY = 0f;
@@ -338,30 +279,14 @@ public class PathPreviewRenderer extends EventRegistrations {
         float maxX = 0.5f;
         float maxY = 0.5f;
 
-        //#if MC>=12105
-        //$$ VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        //$$ immediate.draw();
-        //#if MC>=12111
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayers.textSeeThrough(TEXTURE));
-        //#elseif MC>=12106
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayer.getTextSeeThrough(TEXTURE));
-        //#else
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayer.getGuiTexturedOverlay(TEXTURE));
-        //#endif
-        //#else
         Tessellator tessellator = Tessellator.getInstance();
-        //#if MC>=12100
-        //$$ BufferBuilder buffer = tessellator.begin(net.minecraft.client.render.VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        //#else
         BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        //#endif
-        //#endif
+        buffer.begin(GL11.GL_QUADS, VertexFormats.POSITION_TEXTURE);
 
-        vertex(buffer, minX, minY, 0, posX + size, posY + size, 255);
-        vertex(buffer, minX, maxY, 0, posX + size, posY, 255);
-        vertex(buffer, maxX, maxY, 0, posX, posY, 255);
-        vertex(buffer, maxX, minY, 0, posX, posY + size, 255);
+        buffer.vertex(minX, minY, 0).texture(posX + size, posY + size).next();
+        buffer.vertex(minX, maxY, 0).texture(posX + size, posY).next();
+        buffer.vertex(maxX, maxY, 0).texture(posX, posY).next();
+        buffer.vertex(maxX, minY, 0).texture(posX, posY + size).next();
 
         pushMatrix();
 
@@ -370,32 +295,18 @@ public class PathPreviewRenderer extends EventRegistrations {
         GL11.glRotatef(-mc.getEntityRenderDispatcher().camera.getYaw(), 0, 1, 0);
         GL11.glRotatef(mc.getEntityRenderDispatcher().camera.getPitch(), 1, 0, 0);
 
-        //#if MC>=12105
-        //$$ immediate.draw();
-        //#else
-        //#if MC>=12102
-        //$$ RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-        //#elseif MC>=11700
+        //#if MC>=11700
         //$$ RenderSystem.applyModelViewMatrix();
-        //$$ RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        //$$ RenderSystem.setShader(GameRenderer::getPositionTexShader);
         //#endif
-        //#if MC>=12100
-        //$$ try (var builtBuffer = buffer.end()) {
-        //$$     net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(builtBuffer);
-        //$$ }
-        //#else
         tessellator.draw();
-        //#endif
-        //#endif
 
         popMatrix();
     }
 
     private void drawCamera(Vector3f view, Vector3f pos, Vector3f rot) {
 
-        //#if MC<12105
         bindTexture(CAMERA_HEAD);
-        //#endif
 
         pushMatrix();
 
@@ -406,136 +317,76 @@ public class PathPreviewRenderer extends EventRegistrations {
         GL11.glRotatef(rot.z, 0, 0, 1); // Roll
 
         //draw the position line
-        //#if MC>=12105
-        //$$ VertexConsumerProvider.Immediate immediate = mc.getBufferBuilders().getEntityVertexConsumers();
-        //$$ immediate.draw();
-        //#if MC>=12111
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayers.LINES);
-        //#else
-        //$$ VertexConsumer buffer = immediate.getBuffer(RenderLayer.LINES);
-        //#endif
-        //#else
         Tessellator tessellator = Tessellator.getInstance();
-        //#if MC>=12100
-        //$$ BufferBuilder buffer = tessellator.begin(net.minecraft.client.render.VertexFormat.DrawMode.LINES, VertexFormats.LINES);
-        //#else
         BufferBuilder buffer = tessellator.getBuffer();
         buffer.begin(GL11.GL_LINES, VertexFormats.POSITION_COLOR);
-        //#endif
-        //#endif
 
-        emitLine(new MatrixStack(), buffer, new Vector3f(0, 0, 0), new Vector3f(0, 0, 2), 0x00ff00aa, 3f);
+        emitLine(buffer, new Vector3f(0, 0, 0), new Vector3f(0, 0, 2), 0x00ff00aa);
 
-        //#if MC>=12105
-        //$$ immediate.draw();
-        //#else
-        //#if MC>=12102
-        //$$ RenderSystem.setShader(ShaderProgramKeys.RENDERTYPE_LINES);
-        //#elseif MC>=11700
+        //#if MC>=11700
         //$$ RenderSystem.applyModelViewMatrix();
         //$$ RenderSystem.setShader(GameRenderer::getRenderTypeLinesShader);
         //#else
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         //#endif
 
-        //#if MC>=12100
-        //$$ try (var builtBuffer = buffer.end()) {
-        //$$     net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(builtBuffer);
-        //$$ }
-        //#else
         tessellator.draw();
-        //#endif
 
         //#if MC<11700
         GL11.glEnable(GL11.GL_TEXTURE_2D);
-        //#endif
         //#endif
 
         // draw camera cube
 
         float cubeSize = 0.5f;
 
-        float r = -cubeSize/2;
+        double r = -cubeSize/2;
 
-        //#if MC>=12111
-        //$$ buffer = immediate.getBuffer(RenderLayers.text(CAMERA_HEAD));
-        //#elseif MC>=12106
-        //$$ buffer = immediate.getBuffer(RenderLayer.getText(CAMERA_HEAD));
-        //#elseif MC>=12105
-        //$$ buffer = immediate.getBuffer(RenderLayer.getGuiTextured(CAMERA_HEAD));
-        //#elseif MC>=12100
-        //$$ buffer = tessellator.begin(net.minecraft.client.render.VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        //#else
         buffer.begin(GL11.GL_QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-        //#endif
 
         //back
-        vertex(buffer, r, r + cubeSize, r, 3 * 8 / 64f, 8 / 64f, 200);
-        vertex(buffer, r + cubeSize, r + cubeSize, r, 4*8/64f, 8/64f, 200);
-        vertex(buffer, r + cubeSize, r, r, 4*8/64f, 2*8/64f, 200);
-        vertex(buffer, r, r, r, 3*8/64f, 2*8/64f, 200);
+        buffer.vertex(r, r + cubeSize, r).texture(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r + cubeSize, r).texture(4*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r, r).texture(4*8/64f, 2*8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r).texture(3*8/64f, 2*8/64f).color(255, 255, 255, 200).next();
 
         //front
-        vertex(buffer, r + cubeSize, r, r + cubeSize, 2 * 8 / 64f, 2*8/64f, 200);
-        vertex(buffer, r + cubeSize, r + cubeSize, r + cubeSize, 2 * 8 / 64f, 8/64f, 200);
-        vertex(buffer, r, r + cubeSize, r + cubeSize, 8 / 64f, 8 / 64f, 200);
-        vertex(buffer, r, r, r + cubeSize, 8 / 64f, 2*8/64f, 200);
+        buffer.vertex(r + cubeSize, r, r + cubeSize).texture(2 * 8 / 64f, 2*8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).texture(2 * 8 / 64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r + cubeSize, r + cubeSize).texture(8 / 64f, 8 / 64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r + cubeSize).texture(8 / 64f, 2*8/64f).color(255, 255, 255, 200).next();
 
         //left
-        vertex(buffer, r + cubeSize, r + cubeSize, r, 0, 8/64f, 200);
-        vertex(buffer, r + cubeSize, r + cubeSize, r + cubeSize, 8/64f, 8/64f, 200);
-        vertex(buffer, r + cubeSize, r, r + cubeSize, 8/64f, 2*8/64f, 200);
-        vertex(buffer, r+cubeSize, r, r, 0, 2*8/64f, 200);
+        buffer.vertex(r + cubeSize, r + cubeSize, r).texture(0, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).texture(8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r, r + cubeSize).texture(8/64f, 2*8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r+cubeSize, r, r).texture(0, 2*8/64f).color(255, 255, 255, 200).next();
 
         //right
-        vertex(buffer, r, r + cubeSize, r + cubeSize, 2*8/64f, 8/64f, 200);
-        vertex(buffer, r, r + cubeSize, r, 3*8/64f, 8/64f, 200);
-        vertex(buffer, r, r, r, 3*8/64f, 2*8/64f, 200);
-        vertex(buffer, r, r, r + cubeSize, 2 * 8 / 64f, 2 * 8 / 64f, 200);
+        buffer.vertex(r, r + cubeSize, r + cubeSize).texture(2*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r + cubeSize, r).texture(3*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r).texture(3*8/64f, 2*8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r + cubeSize).texture(2 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).next();
 
         //bottom
-        vertex(buffer, r + cubeSize, r, r, 3*8/64f, 0, 200);
-        vertex(buffer, r + cubeSize, r, r + cubeSize, 3*8/64f, 8/64f, 200);
-        vertex(buffer, r, r, r + cubeSize, 2*8/64f, 8/64f, 200);
-        vertex(buffer, r, r, r, 2 * 8 / 64f, 0, 200);
+        buffer.vertex(r + cubeSize, r, r).texture(3*8/64f, 0).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r, r + cubeSize).texture(3*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r + cubeSize).texture(2*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r, r).texture(2 * 8 / 64f, 0).color(255, 255, 255, 200).next();
 
         //top
-        vertex(buffer, r, r + cubeSize, r, 8/64f, 0, 200);
-        vertex(buffer, r, r + cubeSize, r + cubeSize, 8/64f, 8/64f, 200);
-        vertex(buffer, r + cubeSize, r + cubeSize, r + cubeSize, 2*8/64f, 8/64f, 200);
-        vertex(buffer, r + cubeSize, r + cubeSize, r, 2 * 8 / 64f, 0, 200);
+        buffer.vertex(r, r + cubeSize, r).texture(8/64f, 0).color(255, 255, 255, 200).next();
+        buffer.vertex(r, r + cubeSize, r + cubeSize).texture(8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).texture(2*8/64f, 8/64f).color(255, 255, 255, 200).next();
+        buffer.vertex(r + cubeSize, r + cubeSize, r).texture(2 * 8 / 64f, 0).color(255, 255, 255, 200).next();
 
-        //#if MC>=12105
-        //$$ immediate.draw();
-        //#else
-        //#if MC>=12102
-        //$$ RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-        //#elseif MC>=11700
+        //#if MC>=11700
         //$$ RenderSystem.applyModelViewMatrix();
         //$$ RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
         //#endif
-        //#if MC>=12100
-        //$$ try (var builtBuffer = buffer.end()) {
-        //$$     net.minecraft.client.render.BufferRenderer.drawWithGlobalProgram(builtBuffer);
-        //$$ }
-        //#else
         tessellator.draw();
-        //#endif
-        //#endif
 
         popMatrix();
-    }
-
-    //#if MC>=12105
-    //$$ private void vertex(VertexConsumer buffer, float x, float y, float z, float u, float v, int alpha) {
-    //#else
-    private void vertex(BufferBuilder buffer, float x, float y, float z, float u, float v, int alpha) {
-    //#endif
-        //#if MC>=12106
-        //$$ buffer.vertex(x, y, z).color(255, 255, 255, alpha).texture(u, v).light(240, 240);
-        //#else
-        buffer.vertex(x, y, z).texture(u, v).color(255, 255, 255, alpha).next();
-        //#endif
     }
 
     private class KeyframeComparator implements Comparator<Pair<Keyframe, Vector3f>> {

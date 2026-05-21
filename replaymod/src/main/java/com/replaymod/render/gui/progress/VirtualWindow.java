@@ -7,10 +7,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.util.Window;
 
-//#if MC >= 26.1
-//$$ import com.mojang.blaze3d.systems.RenderSystem;
-//#endif
-
 //#if MC>=11700
 //$$ import net.minecraft.client.gl.WindowFramebuffer;
 //#endif
@@ -72,31 +68,17 @@ public class VirtualWindow implements Closeable {
     }
 
     public void beginWrite() {
-        MinecraftClientExt.get(mc).setFramebufferDelegate(guiFramebuffer);
-        //#if MC<12105
         guiFramebuffer.beginWrite(true);
-        //#endif
     }
 
     public void endWrite() {
-        //#if MC<12105
         guiFramebuffer.endWrite();
-        //#endif
-        MinecraftClientExt.get(mc).setFramebufferDelegate(null);
     }
 
     public void flip() {
-        //#if MC>=12105
-        //$$ guiFramebuffer.blitToScreen();
-        //#else
         guiFramebuffer.draw(framebufferWidth, framebufferHeight);
-        //#endif
 
-        //#if MC >= 26.1
-        //$$ RenderSystem.flipFrame(null);
-        //#elseif MC>=12102
-        //$$ window.swapBuffers(null);
-        //#elseif MC>=11500
+        //#if MC>=11500
         window.swapBuffers();
         //#else
         //#if MC>=11400
@@ -130,7 +112,7 @@ public class VirtualWindow implements Closeable {
 
         //#if MC>=11400
         guiFramebuffer.resize(newWidth, newHeight
-                //#if MC>=11400 && MC<12102
+                //#if MC>=11400
                 , false
                 //#endif
         );
@@ -140,11 +122,7 @@ public class VirtualWindow implements Closeable {
 
         applyScaleFactor();
         if (mc.currentScreen != null) {
-            //#if MC>=12111
-            //$$ mc.currentScreen.resize(window.getScaledWidth(), window.getScaledHeight());
-            //#else
             mc.currentScreen.resize(mc, window.getScaledWidth(), window.getScaledHeight());
-            //#endif
         }
     }
 

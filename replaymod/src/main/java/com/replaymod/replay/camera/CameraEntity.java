@@ -30,16 +30,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.stat.StatHandler;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Box;
-import net.minecraft.world.World;
-
-//#if MC>=12109
-//$$ import net.minecraft.client.network.ClientPlayerLikeEntity;
-//$$ import net.minecraft.entity.PlayerLikeEntity;
-//#endif
-
-//#if MC>=12106
-//$$ import net.minecraft.util.PlayerInput;
-//#endif
 
 //#if FABRIC>=1
 //#else
@@ -52,7 +42,6 @@ import net.minecraft.world.World;
 
 //#if MC>=12002
 //$$ import net.minecraft.client.util.SkinTextures;
-//$$ import net.minecraft.util.math.MathHelper;
 //#endif
 
 //#if MC>=11400
@@ -174,15 +163,8 @@ public class CameraEntity
                 , recipeBook
                 //#endif
                 //#if MC>=11600
-                //#if MC>=12106
-                //$$ , PlayerInput.DEFAULT
-                //#else
                 , false
-                //#endif
                 , false
-                //#endif
-                //#if MC >= 26.1
-                //$$ , mcIn.computeChatAbilities()
                 //#endif
         );
         //#if MC>=10900
@@ -237,11 +219,6 @@ public class CameraEntity
      * @param roll Roll in degrees
      */
     public void setCameraRotation(float yaw, float pitch, float roll) {
-        //#if MC>=12102
-        //$$ // Note: MC's `setPitch` now forces values into the [-90; 90] range, however the math it uses is incorrect, so
-        //$$ //       we need to wrap our value into the [-180; 180] range first to get correct results.
-        //$$ pitch = MathHelper.wrapDegrees(pitch);
-        //#endif
         this.prevYaw = yaw;
         this.prevPitch = pitch;
         this.yaw = yaw;
@@ -331,18 +308,15 @@ public class CameraEntity
             // This is important if the spectated player respawns as their
             // entity is recreated and we have to spectate a new entity
             UUID spectating = ReplayModReplay.instance.getReplayHandler().getSpectatedUUID();
-            // FIXME remap bug: Pattern doesn't work when these two are inlined
-            World cameraWorld = this.world;
-            World viewWorld = view.world;
             if (spectating != null && (view.getUuid() != spectating
-                    || viewWorld != cameraWorld)
-                    || cameraWorld.getEntityById(view.getEntityId()) != view) {
+                    || view.world != this.world)
+                    || this.world.getEntityById(view.getEntityId()) != view) {
                 if (spectating == null) {
                     // Entity (non-player) died, stop spectating
                     ReplayModReplay.instance.getReplayHandler().spectateEntity(this);
                     return;
                 }
-                view = cameraWorld.getPlayerByUuid(spectating);
+                view = this.world.getPlayerByUuid(spectating);
                 if (view != null) {
                     this.client.setCameraEntity(view);
                 } else {
@@ -480,16 +454,7 @@ public class CameraEntity
     //$$ }
     //#endif
 
-    //#if MC>=12102
-    //$$ @Override
-    //$$ public float getFovMultiplier(boolean firstPerson, float fovEffectScale) {
-    //$$     Entity view = this.client.getCameraEntity();
-    //$$     if (view != this && view instanceof AbstractClientPlayerEntity) {
-    //$$         return ((AbstractClientPlayerEntity) view).getFovMultiplier(firstPerson, fovEffectScale);
-    //$$     }
-    //$$     return 1;
-    //$$ }
-    //#elseif MC>=10800
+    //#if MC>=10800
     @Override
     public float getSpeed() {
         Entity view = this.client.getCameraEntity();
@@ -514,16 +479,7 @@ public class CameraEntity
         return super.isInvisible();
     }
 
-    //#if MC>=12109
-    //$$ @Override
-    //$$ public SkinTextures getSkin() {
-    //$$     Entity view = this.client.getCameraEntity();
-    //$$     if (view != this && view instanceof ClientPlayerLikeEntity) {
-    //$$         return ((ClientPlayerLikeEntity) view).getSkin();
-    //$$     }
-    //$$     return super.getSkin();
-    //$$ }
-    //#elseif MC>=12002
+    //#if MC>=12002
     //$$ @Override
     //$$ public SkinTextures getSkinTextures() {
     //$$     Entity view = this.client.getCameraEntity();
@@ -554,16 +510,7 @@ public class CameraEntity
     //#endif
     //#endif
 
-    //#if MC>=12109
-    //$$ @Override
-    //$$ public boolean isModelPartVisible(PlayerModelPart modelPart) {
-    //$$     Entity view = this.client.getCameraEntity();
-    //$$     if (view != this && view instanceof PlayerLikeEntity) {
-    //$$         return ((PlayerLikeEntity) view).isModelPartVisible(modelPart);
-    //$$     }
-    //$$     return super.isModelPartVisible(modelPart);
-    //$$ }
-    //#elseif MC>=10800
+    //#if MC>=10800
     @Override
     public boolean isPartVisible(PlayerModelPart modelPart) {
         Entity view = this.client.getCameraEntity();

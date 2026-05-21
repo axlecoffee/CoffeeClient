@@ -27,6 +27,8 @@ import static com.replaymod.core.versions.MCVer.getMinecraft;
 
 @Mod(modid = ReplayMod.MOD_ID,
         useMetadata = true,
+        version = "@MOD_VERSION@",
+        acceptedMinecraftVersions = "@MC_VERSION@",
         acceptableRemoteVersions = "*",
         //#if MC>=10800
         clientSideOnly = true,
@@ -34,7 +36,6 @@ import static com.replaymod.core.versions.MCVer.getMinecraft;
         //#endif
         guiFactory = "com.replaymod.core.gui.GuiFactory")
 public class ReplayModBackend {
-    
     private final ReplayMod mod = new ReplayMod(this);
     private final EventsAdapter eventsAdapter = new EventsAdapter();
 
@@ -57,23 +58,18 @@ public class ReplayModBackend {
     }
 
     public String getVersion() {
-        System.out.println("CoffeeDebug: getVersion called");
         return Loader.instance().getIndexedModList().get(MOD_ID).getVersion();
     }
 
     public String getMinecraftVersion() {
-        System.out.println("CoffeeDebug: getMinecraftVersion called");
         return Loader.MC_VERSION;
     }
 
     public boolean isModLoaded(String id) {
-        System.out.println("CoffeeDebug: isModLoaded called with id: " + id);
         return Loader.isModLoaded(id);
     }
 
-    static {
-        System.out.println("CoffeeDebug: Static initializer of ReplayModBackend called");
-         // Note: even preInit is too late and we'd have to issue another resource reload
+    static { // Note: even preInit is too late and we'd have to issue another resource reload
         List<IResourcePack> defaultResourcePacks = ((MinecraftAccessor) getMinecraft()).getDefaultResourcePacks();
 
         if (jGuiResourcePack != null) {

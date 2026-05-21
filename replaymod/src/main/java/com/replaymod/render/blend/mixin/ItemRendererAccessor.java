@@ -1,4 +1,4 @@
-//#if MC>=10904 && MC<11900
+//#if MC>=10904
 package com.replaymod.render.blend.mixin;
 
 import net.minecraft.client.render.item.ItemRenderer;

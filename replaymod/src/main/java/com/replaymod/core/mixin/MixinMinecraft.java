@@ -8,11 +8,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-//#if MC>=12109
-//$$ import net.minecraft.network.PacketApplyBatcher;
-//$$ import org.spongepowered.asm.mixin.Final;
-//#endif
-
 //#if MC>=11400
 import com.replaymod.core.events.PostRenderCallback;
 import com.replaymod.core.events.PreRenderCallback;
@@ -35,6 +30,10 @@ public abstract class MixinMinecraft
         //#endif
         implements MCVer.MinecraftMethodAccessor {
     //#if MC>=11400
+    public MixinMinecraft(String string_1) { super(string_1); }
+    //#endif
+
+    //#if MC>=11400
     @Shadow protected abstract void handleInputEvents();
 
     @Override
@@ -43,36 +42,22 @@ public abstract class MixinMinecraft
     }
 
     //#if MC>=11400
-    //#if MC>=12109
-    //$$ @Shadow @Final private PacketApplyBatcher packetApplyBatcher;
-    //#endif
     @Override
     public void replayModExecuteTaskQueue() {
-        //#if MC>=12109
-        //$$ this.packetApplyBatcher.apply();
-        //#endif
         runTasks();
     }
     //#endif
 
-    //#if MC >= 26.1
-    //$$ private static final String GAME_RENDERER_RENDER = "Lnet/minecraft/client/Minecraft;renderFrame(Z)V";
-    //#elseif MC>=12100
-    //$$ private static final String GAME_RENDERER_RENDER = "Lnet/minecraft/client/render/GameRenderer;render(Lnet/minecraft/client/render/RenderTickCounter;Z)V";
-    //#else
-    private static final String GAME_RENDERER_RENDER = "Lnet/minecraft/client/render/GameRenderer;render(FJZ)V";
-    //#endif
-
     @Inject(method = "render",
             at = @At(value = "INVOKE",
-                    target = GAME_RENDERER_RENDER))
+                    target = "Lnet/minecraft/client/render/GameRenderer;render(FJZ)V"))
     private void preRender(boolean unused, CallbackInfo ci) {
         PreRenderCallback.EVENT.invoker().preRender();
     }
 
     @Inject(method = "render",
             at = @At(value = "INVOKE",
-                    target = GAME_RENDERER_RENDER,
+                    target = "Lnet/minecraft/client/render/GameRenderer;render(FJZ)V",
                     shift = At.Shift.AFTER))
     private void postRender(boolean unused, CallbackInfo ci) {
         PostRenderCallback.EVENT.invoker().postRender();
@@ -133,11 +118,5 @@ public abstract class MixinMinecraft
     //$$     InputReplayTimer.handleScroll(wheel);
     //$$     return wheel;
     //$$ }
-    //#endif
-
-    //#if MC >= 26.1
-    //$$ MixinMinecraft() { super(null, false); }
-    //#elseif MC>=11400
-    MixinMinecraft() { super(null); }
     //#endif
 }

@@ -16,10 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-//#if MC>=12105
-//$$ import net.minecraft.entity.Entity;
-//#endif
-
 //#if MC>=11802
 //$$ import net.minecraft.util.registry.RegistryEntry;
 //#endif
@@ -32,9 +28,7 @@ public abstract class MixinWorldClient extends World implements RecordingEventHa
 
     @SuppressWarnings("ConstantConditions")
     protected MixinWorldClient() {
-        //#if MC>=12102
-        //$$ super(null, null, null, null, false, false, 0, 0);
-        //#elseif MC>=11904
+        //#if MC>=11904
         //$$ super(null, null, null, null, null, false, false, 0, 0);
         //#elseif MC>=11900
         //$$ super(null, null, null, null, false, false, 0, 0);
@@ -55,10 +49,7 @@ public abstract class MixinWorldClient extends World implements RecordingEventHa
     // but are instead played directly by the client. The server only sends these sounds to
     // other clients so we have to record them manually.
     // E.g. Block place sounds
-    //#if MC>=12105
-    //$$ @Inject(method = "playSound(Lnet/minecraft/entity/Entity;DDDLnet/minecraft/registry/entry/RegistryEntry;Lnet/minecraft/sound/SoundCategory;FFJ)V",
-    //$$         at = @At("HEAD"))
-    //#elseif MC>=11903
+    //#if MC>=11903
     //$$ @Inject(method = "playSound(Lnet/minecraft/entity/player/PlayerEntity;DDDLnet/minecraft/registry/entry/RegistryEntry;Lnet/minecraft/sound/SoundCategory;FFJ)V",
     //$$         at = @At("HEAD"))
     //#elseif MC>=11900
@@ -77,12 +68,7 @@ public abstract class MixinWorldClient extends World implements RecordingEventHa
     //$$         at = @At("HEAD"))
     //#endif
     public void replayModRecording_recordClientSound(
-            //#if MC>=12105
-            //$$ Entity player,
-            //#else
-            PlayerEntity player,
-            //#endif
-            double x, double y, double z,
+            PlayerEntity player, double x, double y, double z,
             //#if MC>=11903
             //$$ RegistryEntry<SoundEvent> sound,
             //#else
@@ -115,14 +101,7 @@ public abstract class MixinWorldClient extends World implements RecordingEventHa
     //#else
     //$$ @Inject(method = "playLevelEvent", at = @At("HEAD"))
     //#endif
-    private void playLevelEvent(
-            //#if MC>=12105
-            //$$ Entity player,
-            //#else
-            PlayerEntity player,
-            //#endif
-            int type, BlockPos pos, int data, CallbackInfo ci
-    ) {
+    private void playLevelEvent (PlayerEntity player, int type, BlockPos pos, int data, CallbackInfo ci) {
     //#else
     //$$ // These are handled in the World class, so we override the method in WorldClient and add our special handling.
     //$$ @Override

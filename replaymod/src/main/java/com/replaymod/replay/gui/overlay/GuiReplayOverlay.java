@@ -16,7 +16,6 @@ import de.johni0702.minecraft.gui.element.GuiElement;
 import de.johni0702.minecraft.gui.element.GuiSlider;
 import de.johni0702.minecraft.gui.element.GuiTooltip;
 import de.johni0702.minecraft.gui.element.advanced.IGuiTimeline;
-import de.johni0702.minecraft.gui.function.KeyInput;
 import de.johni0702.minecraft.gui.layout.CustomLayout;
 import de.johni0702.minecraft.gui.layout.HorizontalLayout;
 import de.johni0702.minecraft.gui.utils.EventRegistrations;
@@ -182,15 +181,13 @@ public class GuiReplayOverlay extends AbstractGuiOverlay<GuiReplayOverlay> {
             }
         }
 
-        { on(KeyEventCallback.EVENT, this::onKeyInput); }
-        private boolean onKeyInput(KeyInput keyInput, int action) {
-            if (action != KeyEventCallback.ACTION_PRESS) return false;
+        { on(KeyEventCallback.EVENT, (int key, int scanCode, int action, int modifiers) -> { onKeyInput(key, action); return false; }); }
+        private void onKeyInput(int key, int action) {
+            if (action != KeyEventCallback.ACTION_PRESS) return;
             // Allow F1 to be used to hide the replay gui (e.g. for recording with OBS)
-            if (isMouseVisible() && keyInput.key == Keyboard.KEY_F1) {
+            if (isMouseVisible() && key == Keyboard.KEY_F1) {
                 hidden = !hidden;
-                return true;
             }
-            return false;
         }
     }
 }

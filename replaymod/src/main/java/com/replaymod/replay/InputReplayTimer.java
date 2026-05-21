@@ -1,22 +1,16 @@
 package com.replaymod.replay;
 
 import com.replaymod.core.ReplayMod;
+import com.replaymod.core.utils.WrappedTimer;
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.replay.camera.CameraController;
 import com.replaymod.replay.camera.CameraEntity;
 import de.johni0702.minecraft.gui.versions.ScreenExt;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderTickCounter;
 
-//#if MC>=12109
-//$$ import net.minecraft.client.gui.screen.Overlay;
-//#endif
-
-//#if MC>=12109
-//$$ import net.minecraft.client.gui.screen.world.LevelLoadingScreen;
-//#else
 //#if MC>=11802
 //$$ import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
-//#endif
 //#endif
 
 //#if MC>=11400
@@ -39,10 +33,36 @@ import org.lwjgl.glfw.GLFW;
 //$$ import net.minecraft.client.multiplayer.WorldClient;
 //#endif
 
-public class InputReplayTimer {
-    public static void updateInReplay() {
-        ReplayModReplay mod = ReplayModReplay.instance;
-        MinecraftClient mc = mod.getCore().getMinecraft();
+public class InputReplayTimer extends WrappedTimer {
+    private final ReplayModReplay mod;
+    private final MinecraftClient mc;
+    
+    public InputReplayTimer(RenderTickCounter wrapped, ReplayModReplay mod) {
+        super(wrapped);
+        this.mod = mod;
+        this.mc = mod.getCore().getMinecraft();
+    }
+
+    @Override
+    public
+    //#if MC>=11600
+    int
+    //#else
+    //$$ void
+    //#endif
+    beginRenderTick(
+            //#if MC>=11400
+            long sysClock
+            //#endif
+    ) {
+        //#if MC>=11600
+        int ticksThisFrame =
+        //#endif
+        super.beginRenderTick(
+                //#if MC>=11400
+                sysClock
+                //#endif
+        );
 
         ReplayMod.instance.runTasks();
 
@@ -100,24 +120,15 @@ public class InputReplayTimer {
             //#if MC>=11802
             //$$ // As of 1.18.2, this screen always stays open for at least two seconds, and requires ticking to close.
             //$$ // Thanks, but we'll have none of that (at least while in a replay).
-            //#if MC>=12109
-            //$$ if (mc.currentScreen instanceof LevelLoadingScreen) {
-            //#else
             //$$ if (mc.currentScreen instanceof DownloadingTerrainScreen) {
-            //#endif
             //$$     mc.currentScreen.close();
             //$$ }
             //#endif
 
-            //#if MC>=12109
-            //$$ // The SplashOverlay now only closes on `tick`, but there are no ticks while the replay is paused.
-            //$$ // so we need to manually tick it to not get stuck.
-            //$$ Overlay overlay = mc.getOverlay();
-            //$$ if (overlay != null) {
-            //$$     overlay.tick();
-            //$$ }
-            //#endif
         }
+        //#if MC>=11600
+        return ticksThisFrame;
+        //#endif
     }
 
     public static void handleScroll(int wheel) {

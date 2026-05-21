@@ -14,16 +14,9 @@
     "Mixin_ChromaKeyColorSky",
     "Mixin_ChromaKeyDisableFog",
     "Mixin_ChromaKeyForceSky",
-    //#if MC>=12100
-    //$$ "Mixin_FakeSystemTimeUniforms_Iris",
-    //#endif
-    //#if MC>=12105
-    //$$ "Mixin_FixCopyTextureToBuffer_DepthTexture",
-    //#endif
     "Mixin_ForceChunkLoading",
     "Mixin_HideNameTags",
     "Mixin_HideNameTags_LivingEntity",
-    "Mixin_HideNameTags_PlayerEntity",
     "Mixin_Omnidirectional_Camera",
     "Mixin_Omnidirectional_Rotation",
     "Mixin_PreserveDepthDuringGuiRendering",
@@ -34,7 +27,6 @@
     "Mixin_Stereoscopic_Camera",
     "Mixin_Stereoscopic_HandRenderPass",
     "Mixin_SuppressFramebufferResizeDuringRender",
-    "Mixin_UseGuiFramebufferDuringGuiRendering",
     //#if MC>=11600
     "Mixin_AddIrisOdsShaderUniforms",
     "Mixin_LoadIrisOdsShaderPack",

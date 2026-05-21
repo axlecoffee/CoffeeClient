@@ -11,21 +11,6 @@ import net.minecraft.client.util.ScreenshotUtils;
 import static com.replaymod.core.versions.MCVer.popMatrix;
 import static com.replaymod.core.versions.MCVer.pushMatrix;
 
-//#if MC>=12105
-//#if MC<12106
-//$$ import com.mojang.blaze3d.buffers.BufferType;
-//$$ import com.mojang.blaze3d.buffers.BufferUsage;
-//#endif
-//$$ import com.mojang.blaze3d.buffers.GpuBuffer;
-//$$ import com.mojang.blaze3d.systems.CommandEncoder;
-//$$ import com.mojang.blaze3d.systems.GpuDevice;
-//$$ import net.minecraft.client.texture.NativeImage;
-//#endif
-
-//#if MC>=12100
-//$$ import net.minecraft.client.render.RenderTickCounter;
-//#endif
-
 //#if MC>=11500
 import net.minecraft.client.util.math.MatrixStack;
 //#endif
@@ -77,30 +62,19 @@ public class NoGuiScreenshot {
 
                     // Render frame without GUI
                     pushMatrix();
-                    //#if MC>=12105
-                    //$$ RenderSystem.getDevice()
-                    //$$         .createCommandEncoder()
-                    //$$         .clearColorAndDepthTextures(mc.getFramebuffer().getColorAttachment(), 0, mc.getFramebuffer().getDepthAttachment(), 1);
-                    //#else
                     GlStateManager.clear(
                             16640
-                            //#if MC>=11400 && MC<12102
+                            //#if MC>=11400
                             , true
                             //#endif
                     );
                     mc.getFramebuffer().beginWrite(true);
-                    //#endif
                     //#if MC<11904
                     GlStateManager.enableTexture();
                     //#endif
 
-                    //#if MC>=12100
-                    //$$ mc.gameRenderer.renderWorld(RenderTickCounter.ONE);
-                    //#else
                     float tickDelta = mc.getTickDelta();
-                    //#if MC>=12006
-                    //$$ mc.gameRenderer.renderWorld(tickDelta, System.nanoTime());
-                    //#elseif MC>=11500
+                    //#if MC>=11500
                     mc.gameRenderer.renderWorld(tickDelta, System.nanoTime(), new MatrixStack());
                     //#else
                     //#if MC>=11400
@@ -113,17 +87,12 @@ public class NoGuiScreenshot {
                     //#endif
                     //#endif
                     //#endif
-                    //#endif
 
-                    //#if MC<12105
                     mc.getFramebuffer().endWrite();
-                    //#endif
                     popMatrix();
-                    //#if MC<12105
                     pushMatrix();
                     mc.getFramebuffer().draw(frameWidth, frameHeight);
                     popMatrix();
-                    //#endif
                 } catch (Throwable t) {
                     future.setException(t);
                     return;
@@ -135,32 +104,7 @@ public class NoGuiScreenshot {
                 // The frame without GUI has been rendered
                 // Read it, create the screenshot and finish the future
                 try {
-                    //#if MC>=12105
-                    //$$ Image image;
-                    //$$ GpuDevice device = RenderSystem.getDevice();
-                    //#if MC>=12106
-                    //$$ try (GpuBuffer gpuBuffer = device.createBuffer(null, GpuBuffer.USAGE_COPY_DST | GpuBuffer.USAGE_MAP_READ, frameWidth * frameHeight * 4)) {
-                    //#else
-                    //$$ try (GpuBuffer gpuBuffer = device.createBuffer(null, BufferType.PIXEL_PACK, BufferUsage.STATIC_READ, frameWidth * frameHeight * 4)) {
-                    //#endif
-                    //$$     CommandEncoder cmd = device.createCommandEncoder();
-                    //$$     cmd.copyTextureToBuffer(mc.getFramebuffer().getColorAttachment(), gpuBuffer, 0, () -> {}, 0);
-                        //#if MC>=12106
-                        //$$ try (GpuBuffer.MappedView readView = cmd.mapBuffer(gpuBuffer, true, false)) {
-                        //#else
-                        //$$ try (GpuBuffer.ReadView readView = cmd.readBuffer(gpuBuffer)) {
-                        //#endif
-                    //$$         NativeImage nativeImage = new NativeImage(frameWidth, frameHeight, false);
-                    //$$         for (int y = 0; y < frameHeight; ++y) {
-                    //$$             for (int x = 0; x < frameWidth; ++x) {
-                    //$$                 int color = readView.data().getInt((x + y * frameWidth) * 4);
-                    //$$                 nativeImage.setColor(x, frameHeight - y - 1, 0xff000000 | color);
-                    //$$             }
-                    //$$         }
-                    //$$         image = new Image(nativeImage);
-                    //$$     }
-                    //$$ }
-                    //#elseif MC>=11400
+                    //#if MC>=11400
                     Image image = new Image(ScreenshotUtils.takeScreenshot(
                             //#if MC<11701
                             frameWidth, frameHeight,

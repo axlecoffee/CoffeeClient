@@ -68,18 +68,8 @@ import java.util.function.Consumer;
 
 import static com.replaymod.core.versions.MCVer.getMinecraft;
 
-//#if MC>=12109
-//$$ import com.replaymod.core.versions.MCVer.Keyboard;
-//#endif
-
-//#if MC>=12100
-//$$ import net.minecraft.util.crash.ReportType;
-//#endif
-
 public class Utils {
     private static Logger LOGGER = LogManager.getLogger();
-
-    public static final float DEFAULT_MS_PER_TICK = 1000 / 20;
 
     private static InputStream getResourceAsStream(String path) {
         return Utils.class.getResourceAsStream(path);
@@ -233,9 +223,7 @@ public class Utils {
     }
 
     public static boolean isCtrlDown() {
-        //#if MC>=12109
-        //$$ return Keyboard.isKeyDown(Keyboard.LEFT_CTRL) || Keyboard.isKeyDown(Keyboard.RIGHT_CTRL);
-        //#elseif MC>=11400
+        //#if MC>=11400
         return Screen.hasControlDown();
         //#else
         //$$ return Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || Keyboard.isKeyDown(Keyboard.KEY_RCONTROL);
@@ -258,11 +246,7 @@ public class Utils {
 
     public static GuiInfoPopup error(Logger logger, GuiContainer container, CrashReport crashReport, Runnable onClose) {
         // Convert crash report to string
-        String crashReportStr = crashReport.asString(
-                //#if MC>=12100
-                //$$ ReportType.MINECRAFT_CRASH_REPORT
-                //#endif
-        );
+        String crashReportStr = crashReport.asString();
 
         // Log via logger
         logger.error(crashReportStr);
@@ -273,11 +257,7 @@ public class Utils {
                 File folder = new File(getMinecraft().runDirectory, "crash-reports");
                 File file = new File(folder, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-client.txt");
                 logger.debug("Saving crash report to file: {}", file);
-                //#if MC>=12100
-                //$$ crashReport.writeToFile(file.toPath(), ReportType.MINECRAFT_CRASH_REPORT);
-                //#else
                 crashReport.writeToFile(file);
-                //#endif
             } catch (Throwable t) {
                 logger.error("Saving crash report file:", t);
             }

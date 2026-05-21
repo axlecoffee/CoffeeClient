@@ -26,9 +26,7 @@ import de.johni0702.minecraft.gui.element.GuiButton;
 import de.johni0702.minecraft.gui.element.GuiElement;
 import de.johni0702.minecraft.gui.element.GuiLabel;
 import de.johni0702.minecraft.gui.element.GuiTooltip;
-import de.johni0702.minecraft.gui.function.Click;
-import de.johni0702.minecraft.gui.function.KeyHandler;
-import de.johni0702.minecraft.gui.function.KeyInput;
+import de.johni0702.minecraft.gui.function.Typeable;
 import de.johni0702.minecraft.gui.layout.CustomLayout;
 import de.johni0702.minecraft.gui.layout.GridLayout;
 import de.johni0702.minecraft.gui.layout.HorizontalLayout;
@@ -37,6 +35,7 @@ import de.johni0702.minecraft.gui.popup.GuiInfoPopup;
 import de.johni0702.minecraft.gui.utils.Colors;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
+import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.crash.CrashReport;
 import org.apache.commons.io.IOUtils;
@@ -60,7 +59,7 @@ import net.minecraft.text.TranslatableText;
 //$$ import com.replaymod.replaystudio.util.I18n;
 //#endif
 
-public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements KeyHandler {
+public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements Typeable {
     private final GuiLabel title = new GuiLabel().setI18nText("replaymod.gui.renderqueue.title").setColor(Colors.BLACK);
     private final GuiVerticalList list = new GuiVerticalList().setDrawShadow(true).setDrawSlider(true);
     private final GuiButton addButton = new GuiButton().setI18nLabel("replaymod.gui.renderqueue.add").setSize(150, 20);
@@ -273,8 +272,8 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
                 if (!jobs.isEmpty()) {
                     buttonPanel.removeElement(renderButton);
                 }
-                queueButton.onClick(click -> {
-                    RenderSettings settings = save(false, click.hasCtrl());
+                queueButton.onClick(() -> {
+                    RenderSettings settings = save(false);
 
                     RenderJob newJob = new RenderJob();
                     newJob.setSettings(settings);
@@ -343,8 +342,8 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
     }
 
     @Override
-    public boolean handleKey(KeyInput keyInput) {
-        if (keyInput.hasCtrl() && keyInput.key == MCVer.Keyboard.KEY_A) {
+    public boolean typeKey(ReadablePoint mousePosition, int keyCode, char keyChar, boolean ctrlDown, boolean shiftDown) {
+        if (MCVer.Keyboard.hasControlDown() && keyCode == MCVer.Keyboard.KEY_A) {
             if (selectedEntries.size() < list.getListPanel().getChildren().size()) {
                 for (GuiElement<?> child : list.getListPanel().getChildren()) {
                     if (child instanceof Entry) {
@@ -382,8 +381,8 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
         }
 
         @Override
-        protected void onClick(Click click) {
-            if (!click.hasCtrl()) {
+        protected void onClick() {
+            if (!MCVer.Keyboard.hasControlDown()) {
                 selectedEntries.clear();
             }
             if (selectedEntries.contains(this)) {
@@ -411,8 +410,8 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
         public GuiRenderSettings edit() {
             GuiRenderSettings gui = new GuiRenderSettings(container, replayHandler, job.getTimeline());
             gui.buttonPanel.removeElement(gui.renderButton);
-            gui.queueButton.setI18nLabel("replaymod.gui.done").onClick(click -> {
-                job.setSettings(gui.save(false, click.hasCtrl()));
+            gui.queueButton.setI18nLabel("replaymod.gui.done").onClick(() -> {
+                job.setSettings(gui.save(false));
                 label.setText(job.getName());
                 mod.saveRenderQueue();
                 gui.close();

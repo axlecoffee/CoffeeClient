@@ -11,30 +11,33 @@ import com.replaymod.core.utils.Restrictions;
 import com.replaymod.replay.camera.CameraEntity;
 import com.replaymod.replaystudio.io.ReplayInputStream;
 import com.replaymod.replaystudio.lib.viaversion.api.protocol.packet.State;
-import com.replaymod.replaystudio.protocol.PacketType;
 import com.replaymod.replaystudio.protocol.PacketTypeRegistry;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import de.johni0702.minecraft.gui.utils.EventRegistrations;
 import de.johni0702.minecraft.gui.versions.callbacks.PreTickCallback;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.OtherClientPlayerEntity;
+import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
 import net.minecraft.client.gui.screen.NoticeScreen;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.NetworkState;
 import net.minecraft.network.Packet;
-import net.minecraft.network.packet.s2c.login.LoginHelloS2CPacket;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
 import net.minecraft.network.packet.s2c.play.DisconnectS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntitiesDestroyS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.network.packet.s2c.play.ExperienceBarUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.ExperienceOrbSpawnS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
 import net.minecraft.network.packet.s2c.play.CloseScreenS2CPacket;
@@ -54,26 +57,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-
-//#if MC>=12109
-//$$ import net.minecraft.network.ClientConnection;
-//$$ import net.minecraft.network.listener.PacketListener;
-//#endif
-
-//#if MC>=12109
-//$$ import net.minecraft.client.gui.screen.world.LevelLoadingScreen;
-//#else
-import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
-//#endif
-
-//#if MC>=12105
-//#else
-import net.minecraft.network.packet.s2c.play.ExperienceOrbSpawnS2CPacket;
-//#endif
-
-//#if MC>=12005
-//$$ import net.minecraft.network.packet.s2c.common.ServerTransferS2CPacket;
-//#endif
 
 //#if MC>=12002
 //$$ import net.minecraft.network.packet.s2c.config.ReadyS2CPacket;
@@ -100,10 +83,6 @@ import net.minecraft.network.packet.s2c.play.PlayerSpawnS2CPacket;
 //#else
 import net.minecraft.network.packet.s2c.play.MobSpawnS2CPacket;
 import net.minecraft.network.packet.s2c.play.PaintingSpawnS2CPacket;
-//#endif
-
-//#if MC>=11800
-//$$ import org.apache.commons.lang3.mutable.MutableBoolean;
 //#endif
 
 //#if MC>=11600
@@ -140,6 +119,7 @@ import net.minecraft.util.Identifier;
 //#endif
 
 //#if MC>=11200
+import com.replaymod.core.utils.WrappedTimer;
 import net.minecraft.network.packet.s2c.play.AdvancementUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.SelectAdvancementTabS2CPacket;
 import net.minecraft.network.packet.s2c.play.SynchronizeRecipesS2CPacket;
@@ -160,6 +140,7 @@ import net.minecraft.network.packet.s2c.play.UnloadChunkS2CPacket;
 import net.minecraft.network.packet.s2c.play.ResourcePackSendS2CPacket;
 import net.minecraft.network.packet.s2c.play.SetCameraEntityS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
+import net.minecraft.network.NetworkSide;
 //#else
 //$$ import org.apache.commons.io.Charsets;
 //#endif
@@ -174,7 +155,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.replaymod.core.utils.Utils.DEFAULT_MS_PER_TICK;
 import static com.replaymod.core.versions.MCVer.*;
 import static com.replaymod.replaystudio.util.Utils.readInt;
 
@@ -184,15 +164,11 @@ import static com.replaymod.replaystudio.util.Utils.readInt;
  * the replay restart from the beginning.
  */
 @Sharable
-public class FullReplaySender extends ChannelInboundHandlerAdapter implements ReplaySender {
+public class FullReplaySender extends ChannelDuplexHandler implements ReplaySender {
     /**
      * These packets are ignored completely during replay.
      */
     private static final List<Class> BAD_PACKETS = Arrays.<Class>asList(
-            LoginHelloS2CPacket.class, // workaround for an issue where ReplayMod prior to 2.6.20 would record these
-            //#if MC>=12005
-            //$$ ServerTransferS2CPacket.class,
-            //#endif
             //#if MC>=11404
             PlayerActionResponseS2CPacket.class,
             //#endif
@@ -254,9 +230,9 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
     protected ReplayFile replayFile;
 
     /**
-     * The channel used to send packets to minecraft.
+     * The channel handler context used to send packets to minecraft.
      */
-    protected Channel channel;
+    protected ChannelHandlerContext ctx;
 
     /**
      * The replay input stream from which new packets are read.
@@ -296,11 +272,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
     protected boolean hasWorldLoaded;
 
     /**
-     * Whether we are currently in the middle of a bundle packet.
-     */
-    protected boolean inBundle;
-
-    /**
      * The minecraft instance.
      */
     protected MinecraftClient mc = getMinecraft();
@@ -332,17 +303,20 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
     /**
      * Create a new replay sender.
      * @param file The replay file
+     * @param asyncMode {@code true} for async mode, {@code false} otherwise
+     * @see #asyncMode
      */
-    public FullReplaySender(ReplayHandler replayHandler, ReplayFile file) throws IOException {
+    public FullReplaySender(ReplayHandler replayHandler, ReplayFile file, boolean asyncMode) throws IOException {
         this.replayHandler = replayHandler;
         this.replayFile = file;
+        this.asyncMode = asyncMode;
         this.replayLength = file.getMetaData().getDuration();
 
         events.register();
-    }
 
-    public void setChannel(Channel channel) {
-        this.channel = channel;
+        if (asyncMode) {
+            new Thread(asyncSender, "replaymod-async-sender").start();
+        }
     }
 
     /**
@@ -409,8 +383,8 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
         syncSender.shutdown();
         events.unregister();
         try {
-            channel.pipeline().fireChannelInactive();
-            channel.pipeline().close();
+            channelInactive(ctx);
+            ctx.channel().pipeline().close();
             FileUtils.deleteDirectory(tempResourcePackFolder);
         } catch(Exception e) {
             e.printStackTrace();
@@ -446,9 +420,14 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
             return;
         }
 
-        if (msg instanceof Packet) {
+        // When a packet is sent directly, perform no filtering
+        if(msg instanceof Packet) {
+            super.channelRead(ctx, msg);
+        }
+
+        if (msg instanceof byte[]) {
             try {
-                Packet p = (Packet) msg;
+                Packet p = deserializePacket((byte[]) msg);
 
                 if (p != null) {
                     p = processPacket(p);
@@ -464,9 +443,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                             ClientWorld world = mc.world;
                             if (world != null) {
                                 //#if MC>=11800
-                                //$$ MutableBoolean done = new MutableBoolean();
-                                //$$ world.enqueueChunkUpdate(done::setTrue);
-                                //$$ while (!done.booleanValue()) {
+                                //$$ while (!world.hasNoChunkUpdaters()) {
                                 //$$     world.runQueuedChunkUpdates();
                                 //$$ }
                                 //#endif
@@ -496,6 +473,29 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
     }
 
+    private Packet deserializePacket(byte[] bytes) throws IOException, IllegalAccessException, InstantiationException {
+        ByteBuf bb = Unpooled.wrappedBuffer(bytes);
+        PacketByteBuf pb = new PacketByteBuf(bb);
+
+        int i = pb.readVarInt();
+
+        NetworkState state = asMc(registry.getState());
+        //#if MC>=12002
+        //$$ Packet p = state.getHandler(NetworkSide.CLIENTBOUND).createPacket(i, pb);
+        //#elseif MC>=11700
+        //$$ Packet p = state.getPacketHandler(NetworkSide.CLIENTBOUND, i, pb);
+        //#else
+        //#if MC>=10800
+        Packet p = state.getPacketHandler(NetworkSide.CLIENTBOUND, i);
+        //#else
+        //$$ Packet p = Packet.generatePacket(state.func_150755_b(), i);
+        //#endif
+        p.read(pb);
+        //#endif
+
+        return p;
+    }
+
     // If we do not give minecraft time to tick, there will be dead entity artifacts left in the world
     // Therefore we have to remove all loaded, dead entities manually if we are in sync mode.
     // We do this after every SpawnX packet and after the destroy entities packet.
@@ -515,9 +515,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                 //#if MC<11600
                 //$$ || packet instanceof EntitySpawnGlobalS2CPacket
                 //#endif
-                //#if MC<12105
                 || packet instanceof ExperienceOrbSpawnS2CPacket
-                //#endif
                 || packet instanceof EntitiesDestroyS2CPacket;
         if (!relevantPacket) {
             return; // don't want to do it too often, only when there's likely to be a dead entity
@@ -678,7 +676,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                             IOUtils.copy(replayFile.getResourcePack(hash).get(), new FileOutputStream(file));
                         }
                         //#if MC>=12003
-                        //$$ schedulePacketHandler(() -> mc.getServerResourcePackProvider().addResourcePack(packet.id(), file.toPath()));
+                        //$$ mc.getServerResourcePackProvider().addResourcePack(packet.id(), file.toPath());
                         //#else
                         setServerResourcePack(file);
                         //#endif
@@ -707,9 +705,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                     //$$ packet.showDeathScreen(),
                     //$$ packet.doLimitedCrafting(),
                     //$$ withSpectatorMode(packet.commonPlayerSpawnInfo())
-                    //#if MC>=12006
-                    //$$ , packet.enforcesSecureChat()
-                    //#endif
                     //#else
                     //#if MC>=11800
                     //$$ packet.hardcore(),
@@ -863,11 +858,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
             if(!hasWorldLoaded) hasWorldLoaded = true;
 
             ReplayMod.instance.runLater(() -> {
-                //#if MC>=12109
-                //$$ if (mc.currentScreen instanceof LevelLoadingScreen) {
-                //#else
                 if (mc.currentScreen instanceof DownloadingTerrainScreen) {
-                //#endif
                     // Close the world loading screen manually in case we swallow the packet
                     mc.openScreen(null);
                 }
@@ -877,11 +868,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
             //#if MC>=10800
             //#if MC>=11904
-            //#if MC>=12102
-            //$$ for (PositionFlag relative : ppl.relatives()) {
-            //#else
             //$$ for (PositionFlag relative : ppl.getFlags()) {
-            //#endif
             //$$     if (relative == PositionFlag.X || relative == PositionFlag.Y || relative == PositionFlag.Z) {
             //#elseif MC>=11400
             for (PlayerPositionLookS2CPacket.Flag relative : ppl.getFlags()) {
@@ -915,24 +902,14 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                     }
 
                     CameraEntity cent = replayHandler.getCameraEntity();
-                    //#if MC>=12102
-                    //$$ if (!allowMovement && !((Math.abs(cent.getX() - ppl.change().position().x) > TP_DISTANCE_LIMIT) ||
-                    //$$         (Math.abs(cent.getZ() - ppl.change().position().z) > TP_DISTANCE_LIMIT))) {
-                    //#else
                     if (!allowMovement && !((Math.abs(cent.getX() - ppl.getX()) > TP_DISTANCE_LIMIT) ||
                             (Math.abs(cent.getZ() - ppl.getZ()) > TP_DISTANCE_LIMIT))) {
-                    //#endif
                         return;
                     } else {
                         allowMovement = false;
                     }
-                    //#if MC>=12102
-                    //$$ cent.setCameraPosition(ppl.change().position().x, ppl.change().position().y, ppl.change().position().z);
-                    //$$ cent.setCameraRotation(ppl.change().yaw(), ppl.change().pitch(), cent.roll);
-                    //#else
                     cent.setCameraPosition(ppl.getX(), ppl.getY(), ppl.getZ());
                     cent.setCameraRotation(ppl.getYaw(), ppl.getPitch(), cent.roll);
-                    //#endif
                 }
             });
 
@@ -983,7 +960,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
             return processPacketAsync(p);
         } else {
             Packet fp = p;
-            schedulePacketHandler(() -> processPacketSync(fp));
+            mc.send(() -> processPacketSync(fp));
             return p;
         }
     }
@@ -1000,12 +977,35 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
     //$$             org.isFlat(),
     //$$             org.lastDeathLocation(),
     //$$             org.portalCooldown()
-                //#if MC>=12102
-                //$$ , org.seaLevel()
-                //#endif
     //$$     );
     //$$ }
     //#endif
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        this.ctx = ctx;
+        super.channelActive(ctx);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        // The embedded channel's event loop will consider every thread to be in it and as such provides no
+        // guarantees that only one thread is using the pipeline at any one time.
+        // For reading the replay sender (either sync or async) is the only thread ever writing.
+        // For writing it may very well happen that multiple threads want to use the pipline at the same time.
+        // It's unclear whether the EmbeddedChannel is supposed to be thread-safe (the behavior of the event loop
+        // does suggest that). However it seems like it either isn't (likely) or there is a race condition.
+        // See: https://www.replaymod.com/forum/thread/1752#post8045 (https://paste.replaymod.com/lotacatuwo)
+        // To work around this issue, we just outright drop all write/flush requests (they aren't needed anyway).
+        // This still leaves channel handlers upstream with the threading issue but they all seem to cope well with it.
+        promise.setSuccess();
+    }
+
+    @Override
+    public void flush(ChannelHandlerContext ctx) throws Exception {
+        // See write method above
+    }
 
     /**
      * Returns the speed of the replay. 1 being normal speed, 0.5 half and 2 twice as fast.
@@ -1032,7 +1032,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
         }
         TimerAccessor timer = (TimerAccessor) ((MinecraftAccessor) mc).getTimer();
         //#if MC>=11200
-        timer.setTickLength(DEFAULT_MS_PER_TICK / (float) d);
+        timer.setTickLength(WrappedTimer.DEFAULT_MS_PER_TICK / (float) d);
         //#else
         //$$ timer.setTimerSpeed((float) d);
         //#endif
@@ -1068,6 +1068,9 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
     private Runnable asyncSender = new Runnable() {
         public void run() {
             try {
+                while (ctx == null && !terminate) {
+                    Thread.sleep(10);
+                }
                 REPLAY_LOOP:
                 while (!terminate) {
                     synchronized (FullReplaySender.this) {
@@ -1078,7 +1081,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                         while (true) {
                             try {
                                 // When playback is paused and the world has loaded (we don't want any dirt-screens) we sleep
-                                while (paused() && hasWorldLoaded && !inBundle) {
+                                while (paused() && hasWorldLoaded) {
                                     // Unless we are going to terminate, restart or jump
                                     if (terminate || startFromBeginning || desiredTimeStamp != -1) {
                                         break;
@@ -1086,7 +1089,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                                     Thread.sleep(10);
                                 }
 
-                                if (terminate && !inBundle) {
+                                if (terminate) {
                                     break REPLAY_LOOP;
                                 }
 
@@ -1106,7 +1109,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
                                 // If we aren't jumping and the world has already been loaded (no dirt-screens) then wait
                                 // the required amount to get proper packet timing
-                                if (!isHurrying() && hasWorldLoaded && !inBundle) {
+                                if (!isHurrying() && hasWorldLoaded) {
                                     // Timestamp of when the next packet should be sent
                                     long expectedTime = realTimeStart + (long) (nextTimeStamp / replaySpeed);
                                     long now = System.currentTimeMillis();
@@ -1117,8 +1120,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                                 }
 
                                 // Process packet
-                                if (nextPacket.type == PacketType.Bundle) inBundle = !inBundle;
-                                channel.pipeline().fireChannelRead(Unpooled.wrappedBuffer(nextPacket.bytes));
+                                channelRead(ctx, nextPacket.bytes);
                                 nextPacket = null;
 
                                 lastTimeStamp = nextTimeStamp;
@@ -1129,7 +1131,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                                 // Might be safe to do the same on older versions too, but I'd rather not poke the
                                 // monster that is Forge networking.
                                 //#if MC>=12002
-                                //$$ while (!channel.config().isAutoRead()) {
+                                //$$ while (!ctx.channel().config().isAutoRead()) {
                                 //$$     Thread.sleep(0, 100_000);
                                 //$$ }
                                 //#endif
@@ -1165,7 +1167,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
                         // Restart the replay.
                         hasWorldLoaded = false;
-                        inBundle = false;
                         lastTimeStamp = 0;
                         registry = getPacketTypeRegistry(State.LOGIN);
                         startFromBeginning = false;
@@ -1292,13 +1293,16 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
     private void doSendPacketsTill(int timestamp) {
         try {
+            while (ctx == null && !terminate) { // Make sure channel is ready
+                Thread.sleep(10);
+            }
+
             synchronized (this) {
                 if (timestamp == lastTimeStamp) { // Do nothing if we're already there
                     return;
                 }
                 if (timestamp < lastTimeStamp) { // Restart the replay if we need to go backwards in time
                     hasWorldLoaded = false;
-                    inBundle = false;
                     lastTimeStamp = 0;
                     if (replayIn != null) {
                         replayIn.close();
@@ -1327,15 +1331,14 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                         }
 
                         int nextTimeStamp = pd.timestamp;
-                        if (nextTimeStamp > timestamp && !inBundle) {
+                        if (nextTimeStamp > timestamp) {
                             // We are done sending all packets
                             nextPacket = pd;
                             break;
                         }
 
                         // Process packet
-                        if (pd.type == PacketType.Bundle) inBundle = !inBundle;
-                        channel.pipeline().fireChannelRead(Unpooled.wrappedBuffer(pd.bytes));
+                        channelRead(ctx, pd.bytes);
 
                         // MC as of 1.20.2 relies on autoRead, so it can update the connection state on the main
                         // thread before the next packet is read. As such, we need to stall if that was just
@@ -1343,7 +1346,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                         // Might be safe to do the same on older versions too, but I'd rather not poke the
                         // monster that is Forge networking.
                         //#if MC>=12002
-                        //$$ while (!channel.config().isAutoRead()) {
+                        //$$ while (!ctx.channel().config().isAutoRead()) {
                         //$$     Thread.sleep(0, 100_000);
                         //$$ }
                         //#endif
@@ -1397,18 +1400,7 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
         if (mc.isOnThread()) {
             runnable.run();
         } else {
-            //#if MC>=12109
-            //$$ mc.getPacketApplyBatcher().add(channel.pipeline().get(ClientConnection.class).getPacketListener(), new Packet<>() {
-            //$$     @Override
-            //$$     public net.minecraft.network.packet.PacketType<? extends Packet<PacketListener>> getPacketType() {
-            //$$         return null;
-            //$$     }
-            //$$     @Override
-            //$$     public void apply(PacketListener listener) {
-            //$$         runnable.run();
-            //$$     }
-            //$$ });
-            //#elseif MC>=11400
+            //#if MC>=11400
             mc.execute(runnable);
             //#else
             //$$ mc.addScheduledTask(runnable);
@@ -1420,13 +1412,8 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
         //#if MC>=10904
         if (p instanceof UnloadChunkS2CPacket) {
             UnloadChunkS2CPacket packet = (UnloadChunkS2CPacket) p;
-            //#if MC >= 26.1
-            //$$ int x = packet.pos().x();
-            //$$ int z = packet.pos().z();
-            //#else
             int x = packet.getX();
             int z = packet.getZ();
-            //#endif
         //#else
         //$$ if (p instanceof S21PacketChunkData && ((S21PacketChunkData) p).getExtractedSize() == 0) {
         //$$     S21PacketChunkData packet = (S21PacketChunkData) p;
@@ -1446,7 +1433,11 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
             //#if MC>=11400
             ClientWorld world = mc.world;
             ChunkManager chunkProvider = world.getChunkManager();
-            WorldChunk chunk = chunkProvider.getWorldChunk(x, z);
+            WorldChunk chunk = chunkProvider.getWorldChunk(x, z
+                    //#if MC<11500
+                    //$$ , false
+                    //#endif
+            );
             if (chunk != null) {
             //#else
             //$$ World world = mc.world;
@@ -1484,7 +1475,11 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                             // Entity has left the chunk
                             chunk.remove(entity, entity.chunkY);
                         }
-                        WorldChunk newChunk = chunkProvider.getWorldChunk(chunkX, chunkZ);
+                        WorldChunk newChunk = chunkProvider.getWorldChunk(chunkX, chunkZ
+                                //#if MC<11500
+                                //$$ , false
+                                //#endif
+                        );
                         if (newChunk != null) {
                             newChunk.addEntity(entity);
                         } else {
@@ -1562,7 +1557,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
 
         private final int timestamp;
         private final byte[] bytes;
-        private final PacketType type;
 
         PacketData(ReplayInputStream in) throws IOException {
             if (ReplayMod.isMinimalMode()) {
@@ -1574,7 +1568,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                 }
                 bytes = new byte[length];
                 IOUtils.readFully(in, bytes);
-                type = PacketType.UnknownLogin;
             } else {
                 com.replaymod.replaystudio.PacketData data = in.readPacket();
                 if (data == null) {
@@ -1582,13 +1575,6 @@ public class FullReplaySender extends ChannelInboundHandlerAdapter implements Re
                 }
                 timestamp = (int) data.getTime();
                 com.replaymod.replaystudio.protocol.Packet packet = data.getPacket();
-                type = packet.getType();
-                // Workaround for ReplayMod 2.7.16-17 saving the LoginSuccess packet with an incorrect packet id
-                // A fake one will have been sythesized by ReplayStudo, so we can simply drop the broken one.
-                if (packet.getId() == -1) {
-                    bytes = new byte[0];
-                    return;
-                }
                 // We need to re-encode ReplayStudio packets, so we can later decode them as NMS packets
                 // The main reason we aren't reading them as NMS packets is that we want ReplayStudio to be able
                 // to apply ViaVersion (and potentially other magic) to it.

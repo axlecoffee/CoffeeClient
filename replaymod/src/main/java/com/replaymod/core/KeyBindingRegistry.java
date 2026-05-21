@@ -4,7 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.replaymod.core.events.PreRenderCallback;
 import com.replaymod.core.mixin.KeyBindingAccessor;
-import de.johni0702.minecraft.gui.function.KeyInput;
 import de.johni0702.minecraft.gui.utils.EventRegistrations;
 import com.replaymod.core.events.KeyBindingEventCallback;
 import com.replaymod.core.events.KeyEventCallback;
@@ -23,7 +22,6 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.Identifier;
 import static com.replaymod.core.ReplayMod.MOD_ID;
-import static de.johni0702.minecraft.gui.versions.MCVer.identifier;
 //#else
 //$$ import net.minecraftforge.fml.client.registry.ClientRegistry;
 //#endif
@@ -37,21 +35,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class KeyBindingRegistry extends EventRegistrations {
-    //#if MC>=12109
-    //$$ private static final KeyBinding.Category CATEGORY = KeyBinding.Category.create(identifier(MOD_ID, "general"));
-    //#else
     private static final String CATEGORY = "replaymod.title";
     //#if FABRIC>=1 && MC<11600
     //$$ static { net.fabricmc.fabric.api.client.keybinding.KeyBindingRegistry.INSTANCE.addCategory(CATEGORY); }
     //#endif
-    //#endif
 
     private final Map<String, Binding> bindings = new HashMap<>();
     private Set<KeyBinding> onlyInReplay = new HashSet<>();
-    private Multimap<Integer, Function<KeyInput, Boolean>> rawHandlers = ArrayListMultimap.create();
+    private Multimap<Integer, Supplier<Boolean>> rawHandlers = ArrayListMultimap.create();
 
     public Binding registerKeyBinding(String name, int keyCode, Runnable whenPressed, boolean onlyInRepay) {
         Binding binding = registerKeyBinding(name, keyCode, onlyInRepay);
@@ -72,7 +66,7 @@ public class KeyBindingRegistry extends EventRegistrations {
             if (keyCode == 0) {
                 keyCode = -1;
             }
-            Identifier id = identifier(MOD_ID, name.substring(LangResourcePack.LEGACY_KEY_PREFIX.length()));
+            Identifier id = new Identifier(MOD_ID, name.substring(LangResourcePack.LEGACY_KEY_PREFIX.length()));
             //#if MC>=11600
             String key = String.format("key.%s.%s", id.getNamespace(), id.getPath());
             KeyBinding keyBinding = new KeyBinding(key, InputUtil.Type.KEYSYM, keyCode, CATEGORY);
@@ -97,7 +91,7 @@ public class KeyBindingRegistry extends EventRegistrations {
         return binding;
     }
 
-    public void registerRaw(int keyCode, Function<KeyInput, Boolean> whenPressed) {
+    public void registerRaw(int keyCode, Supplier<Boolean> whenPressed) {
         rawHandlers.put(keyCode, whenPressed);
     }
 
@@ -143,18 +137,18 @@ public class KeyBindingRegistry extends EventRegistrations {
         }
     }
 
-    { on(KeyEventCallback.EVENT, this::handleRaw); }
-    private boolean handleRaw(KeyInput keyInput, int action) {
+    { on(KeyEventCallback.EVENT, (keyCode, scanCode, action, modifiers) -> handleRaw(keyCode, action)); }
+    private boolean handleRaw(int keyCode, int action) {
         if (action != KeyEventCallback.ACTION_PRESS) return false;
-        for (final Function<KeyInput, Boolean> handler : rawHandlers.get(keyInput.key)) {
+        for (final Supplier<Boolean> handler : rawHandlers.get(keyCode)) {
             try {
-                if (handler.apply(keyInput)) {
+                if (handler.get()) {
                     return true;
                 }
             } catch (Throwable cause) {
                 CrashReport crashReport = CrashReport.create(cause, "Handling Raw Key Binding");
                 CrashReportSection category = crashReport.addElement("Key Binding");
-                category.add("Key Code", () -> "" + keyInput.key);
+                category.add("Key Code", () -> "" + keyCode);
                 category.add("Handler", handler::toString);
                 throw new CrashException(crashReport);
             }

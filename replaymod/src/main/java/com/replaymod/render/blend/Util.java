@@ -5,13 +5,13 @@ import de.johni0702.minecraft.gui.utils.lwjgl.vector.Matrix4f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Quaternion;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.util.GlAllocationUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.block.entity.BlockEntity;
 import org.blender.dna.Link;
 import org.blender.dna.ListBase;
 import org.blender.utils.BlenderFactory;
 import org.cakelab.blender.nio.CPointer;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
@@ -39,7 +39,7 @@ public class Util {
         }
     }
 
-    private static FloatBuffer floatBuffer = BufferUtils.createByteBuffer(16 * 4).asFloatBuffer();
+    private static FloatBuffer floatBuffer = GlAllocationUtils.allocateByteBuffer(16 * 4).asFloatBuffer();
     public static Matrix4f getGlMatrix(int matrix) {
         floatBuffer.clear();
         //#if MC>=11400
@@ -139,10 +139,7 @@ public class Util {
     //#if MC>=10800
     public static Vector3f getCameraPos() {
         MinecraftClient mc = MinecraftClient.getInstance();
-        //#if MC>=12111
-        //$$ Vec3d pos = mc.getEntityRenderDispatcher().camera.getCameraPos();
-        //$$ return new Vector3f((float) pos.x, (float) pos.y, (float) pos.z);
-        //#elseif MC>=11400
+        //#if MC>=11400
         Vec3d pos = mc.getEntityRenderDispatcher().camera.getPos();
         return new Vector3f((float) pos.x, (float) pos.y, (float) pos.z);
         //#else
@@ -185,12 +182,7 @@ public class Util {
         }
     }
 
-    //#if MC >= 26.1
-    //#else
     public static String getTileEntityId(BlockEntity tileEntity) {
-        //#if MC>=12006
-        //$$ return net.minecraft.block.entity.BlockEntityType.getId(tileEntity.getType()).toString();
-        //#else
         //#if MC>=11800
         //$$ NbtCompound nbt = tileEntity.createNbt();
         //#else
@@ -202,9 +194,7 @@ public class Util {
         //#endif
         //#endif
         return nbt.getString("id");
-        //#endif
     }
-    //#endif
 
     public interface IOCallable<R> {
         R call() throws IOException;

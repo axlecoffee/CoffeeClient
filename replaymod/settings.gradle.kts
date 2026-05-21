@@ -6,19 +6,21 @@ pluginManagement {
         google()
         maven("https://jitpack.io")
         maven("https://maven.fabricmc.net")
-        maven("https://maven.architectury.dev/")
-        maven("https://maven.minecraftforge.net")
-        maven("https://repo.essential.gg/repository/maven-public")
     }
-    plugins {
-        id("gg.essential.multi-version.root") version "0.7.0-alpha.4"
-        id("com.gradleup.shadow") version "9.4.1"
+    resolutionStrategy {
+        eachPlugin {
+            when (requested.id.id) {
+                "com.replaymod.preprocess" -> {
+                    useModule("com.github.replaymod:preprocessor:${requested.version}")
+                }
+            }
+        }
     }
 }
 
 val jGuiVersions = listOf(
         // "1.7.10",
-        // "1.8",
+        "1.8",
         "1.8.9",
         "1.9.4",
         "1.12",
@@ -38,19 +40,10 @@ val jGuiVersions = listOf(
         "1.20.1",
         "1.20.2",
         "1.20.4",
-        "1.20.6",
-        "1.21",
-        "1.21.2",
-        "1.21.4",
-        "1.21.5",
-        "1.21.7",
-        "1.21.10",
-        "1.21.11",
-        "26.1",
 )
 val replayModVersions = listOf(
         // "1.7.10",
-        // "1.8",
+        "1.8",
         "1.8.9",
         "1.9.4",
         "1.10.2",
@@ -75,31 +68,20 @@ val replayModVersions = listOf(
         "1.20.1",
         "1.20.2",
         "1.20.4",
-        "1.20.6",
-        "1.21",
-        "1.21.2",
-        "1.21.4",
-        "1.21.5",
-        "1.21.7",
-        "1.21.10",
-        "1.21.11",
-        "26.1",
 )
 
 rootProject.buildFileName = "root.gradle.kts"
 
-includeBuild("libs/ReplayStudio")
-
 include(":jGui")
 project(":jGui").apply {
     projectDir = file("jGui")
-    buildFileName = "root.gradle.kts"
+    buildFileName = "preprocess.gradle.kts"
 }
 jGuiVersions.forEach { version ->
     include(":jGui:$version")
     project(":jGui:$version").apply {
         projectDir = file("jGui/versions/$version")
-        buildFileName = "../../build.gradle.kts"
+        buildFileName = "../../build.gradle"
     }
 }
 
@@ -107,6 +89,6 @@ replayModVersions.forEach { version ->
     include(":$version")
     project(":$version").apply {
         projectDir = file("versions/$version")
-        buildFileName = "../../build.gradle.kts"
+        buildFileName = "../../build.gradle"
     }
 }

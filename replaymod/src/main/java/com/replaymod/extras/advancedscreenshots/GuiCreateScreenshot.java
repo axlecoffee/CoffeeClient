@@ -6,7 +6,6 @@ import com.replaymod.render.gui.GuiRenderSettings;
 import com.replaymod.replay.ReplayModReplay;
 import de.johni0702.minecraft.gui.container.GuiContainer;
 import de.johni0702.minecraft.gui.container.GuiPanel;
-import de.johni0702.minecraft.gui.container.GuiScreen;
 import de.johni0702.minecraft.gui.element.GuiLabel;
 import de.johni0702.minecraft.gui.function.Loadable;
 import de.johni0702.minecraft.gui.layout.GridLayout;
@@ -49,19 +48,18 @@ public class GuiCreateScreenshot extends GuiRenderSettings implements Loadable {
 
         exportArguments.setText(""); // To disable any preset-based checks
         buttonPanel.removeElement(queueButton);
-        renderButton.setI18nLabel("replaymod.gui.advancedscreenshots.create").onClick(click -> {
+        renderButton.setI18nLabel("replaymod.gui.advancedscreenshots.create").onClick(() -> {
             // Closing this GUI ensures that settings are saved
             close();
 
             mod.runLater(() -> {
                 try {
-                    RenderSettings settings = save(false, click.hasCtrl());
+                    RenderSettings settings = save(false);
 
                     boolean success = new ScreenshotRenderer(settings).renderScreenshot();
                     if (success) {
-                        GuiScreen screen = createBaseScreen();
-                        new GuiUploadScreenshot(screen, mod, settings).open();
-                        screen.display();
+                        new GuiUploadScreenshot(ReplayModReplay.instance.getReplayHandler().getOverlay(), mod,
+                                settings).open();
                     }
 
                 } catch (Throwable t) {

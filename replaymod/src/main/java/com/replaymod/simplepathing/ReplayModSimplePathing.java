@@ -98,7 +98,7 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
             settingsRegistry.set(Setting.AUTO_SYNC, active);
             settingsRegistry.save();
         });
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_DELETE, keyInput ->
+        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_DELETE, () ->
                 guiPathing != null && guiPathing.deleteButtonPressed());
         keyPositionKeyframe = core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.positionkeyframe", Keyboard.KEY_I, () -> {
             if (guiPathing != null) guiPathing.toggleKeyframe(SPPath.POSITION, false);
@@ -115,10 +115,10 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
                 guiPathing.toggleKeyframe(SPPath.POSITION, false);
             }
         }, true);
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Z, keyInput -> {
-            if (keyInput.hasCtrl() && currentTimeline != null) {
+        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Z, () -> {
+            if (Screen.hasControlDown() && currentTimeline != null) {
                 Timeline timeline = currentTimeline.getTimeline();
-                if (keyInput.hasShift()) {
+                if (Screen.hasShiftDown()) {
                     if (timeline.peekRedoStack() != null) {
                         timeline.redoLastChange();
                     }
@@ -131,8 +131,8 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
             }
             return false;
         });
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Y, keyInput -> {
-            if (keyInput.hasCtrl() && currentTimeline != null) {
+        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Y, () -> {
+            if (Screen.hasControlDown() && currentTimeline != null) {
                 Timeline timeline = currentTimeline.getTimeline();
                 if (timeline.peekRedoStack() != null) {
                     timeline.redoLastChange();

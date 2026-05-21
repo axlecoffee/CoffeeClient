@@ -8,6 +8,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
+import java.util.Queue;
+
 //#if MC>=11800
 //$$ import java.util.function.Supplier;
 //#endif
@@ -23,18 +25,10 @@ import java.util.concurrent.CompletableFuture;
 //#if MC<11400
 //$$ import net.minecraft.client.resources.IResourcePack;
 //$$ import java.util.List;
-//$$ import java.util.Queue;
 //#endif
 
 @Mixin(MinecraftClient.class)
 public interface MinecraftAccessor {
-    //#if MC>=12100
-    //$$ @Accessor("renderTickCounter")
-    //$$ RenderTickCounter.Dynamic getTimer();
-    //$$ @Accessor("renderTickCounter")
-    //$$ @Mutable
-    //$$ void setTimer(RenderTickCounter.Dynamic value);
-    //#else
     @Accessor("renderTickCounter")
     RenderTickCounter getTimer();
     @Accessor("renderTickCounter")
@@ -42,7 +36,6 @@ public interface MinecraftAccessor {
     @Mutable
     //#endif
     void setTimer(RenderTickCounter value);
-    //#endif
 
     //#if MC>=11400
     @Accessor
@@ -52,20 +45,18 @@ public interface MinecraftAccessor {
     //#endif
 
     //#if MC>=11400
+    @Accessor
+    Queue<Runnable> getRenderTaskQueue();
     //#else
     //$$ @Accessor
     //$$ Queue<FutureTask<?>> getScheduledTasks();
     //#endif
 
-    //#if MC >= 26.1
-    //$$ // Now in BlockableEventLoopAccessor
-    //#else
     @Accessor("crashReport")
     //#if MC>=11800
     //$$ Supplier<CrashReport> getCrashReporter();
     //#else
     CrashReport getCrashReporter();
-    //#endif
     //#endif
 
     //#if MC<11400

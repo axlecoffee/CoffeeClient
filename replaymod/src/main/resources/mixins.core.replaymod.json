@@ -4,14 +4,10 @@
   "mixins": [],
   "server": [],
   "client": [
-    //#if MC >= 26.1
-    //$$ "BlockableEventLoopAccessor",
-    //#endif
     "Mixin_ContextualKeyBindings",
     //#if MC>=11400
     "AbstractButtonWidgetAccessor",
-    "Mixin_PostRenderWorldCalback",
-    "Mixin_PreRenderHandCallback",
+    "MixinGameRenderer",
     "Mixin_InjectDynamicResourcePacks",
     //#endif
     //#if MC>=11400

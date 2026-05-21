@@ -23,7 +23,7 @@ import static org.lwjgl.opengl.GL21.GL_PIXEL_PACK_BUFFER;
 import static org.lwjgl.opengl.ARBVertexBufferObject.*;
 //#endif
 
-public class PixelBufferObject implements AutoCloseable {
+public class PixelBufferObject {
     public enum Usage {
         COPY(GL_STREAM_COPY_ARB, GL_STREAM_COPY),
         DRAW(GL_STREAM_DRAW_ARB, GL_STREAM_DRAW),
@@ -207,8 +207,7 @@ public class PixelBufferObject implements AutoCloseable {
         mapped.set(0);
     }
 
-    @Override
-    public void close() {
+    public void delete() {
         if (handle != -1) {
             if (arb) {
                 //#if MC>=11400
@@ -228,7 +227,7 @@ public class PixelBufferObject implements AutoCloseable {
         super.finalize();
         if (handle != -1) {
             LogManager.getLogger().warn("PBO garbage collected before deleted!");
-            ReplayMod.instance.runLater(this::close);
+            ReplayMod.instance.runLater(this::delete);
         }
     }
 }
