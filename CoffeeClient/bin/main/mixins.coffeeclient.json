@@ -4,9 +4,27 @@
     "refmap": "mixins.${modid}.refmap.json",
     "minVersion": "0.7",
     "compatibilityLevel": "JAVA_8",
-    "mixins": [],
+    "mixins": [
+        "MixinEntity",
+        "MixinEntityLivingBase",
+        "MixinEntityPlayerSP",
+        "MixinNetHandlerPlayClient",
+        "MixinNetworkManager",
+        "IAccessorC03PacketPlayer",
+        "IAccessorEntity",
+        "AccessorEntityLivingBase"
+    ],
     "client": [
-        "MixinRunTick"
+        "MixinRunTick",
+        "AccessorGuiContainer",
+        "IAccessorPlayerControllerMP",
+        "MixinBlockRendererDispatcher",
+        "MixinMinecraft",
+        "MixinRendererLivingEntity",
+        "AccessorRenderManager",
+        "IAccessorMinecraft",
+        "IAccessorC0DPacketCloseWindow",
+        "AccessorEntityRenderer"
     ],
     "injectors": {
         "defaultRequire": 0
