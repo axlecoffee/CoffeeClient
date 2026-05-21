@@ -1,10 +1,10 @@
-package coffee.axle.coffeeclient.examplemod.util;
+package coffee.axle.coffeeclient.util;
 
 import org.apache.logging.log4j.LogManager;
 
 public final class Logger {
 
-    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("ExampleMod");
+    private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("CoffeeClient");
 
     private Logger() {
     }

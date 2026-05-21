@@ -377,10 +377,16 @@ val bundleJar by tasks.registering(com.github.jengelman.gradle.plugins.shadow.ta
 tasks.assemble { dependsOn(bundleJar) }
 
 if (project.name == "1.8.9") {
-    tasks.register<Copy>("deployLunar") {
+    // todo: automatically disable tests
+    // for now just pass -x test
+    val lunarJarName = "ReplayMod-v1_8-2.6.14.jar"
+    bundleJar.configure {
+        archiveFileName.set(lunarJarName)
+    }
+    tasks.register<Copy>("idep") { // internal deploy - no im not inventing fucking hot reloading for cancer slop lunar client
         dependsOn(bundleJar)
         from(bundleJar.flatMap { it.archiveFile })
         into("C:/Users/blood/.lunarclient/offline/multiver/overrides")
-        rename { "ReplayMod-v1_8-2.6.14.jar" }
+        rename { lunarJarName }
     }
 }

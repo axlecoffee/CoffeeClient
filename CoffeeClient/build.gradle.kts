@@ -11,7 +11,6 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-//Constants:
 
 val baseGroup: String by project
 val mcVersion: String by project
@@ -19,7 +18,6 @@ val version: String by project
 val mixinGroup = "$baseGroup.mixin"
 val modid: String by project
 
-// Toolchains:
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(8))
 }
@@ -54,8 +52,6 @@ sourceSets.main {
     output.setResourcesDir(sourceSets.main.flatMap { it.java.classesDirectory })
 }
 
-// Dependencies:
-
 repositories {
     mavenCentral()
     maven("https://repo.spongepowered.org/maven/")
@@ -76,12 +72,11 @@ dependencies {
     }
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT")
 
-    compileOnly(files("C:/Users/blood/.lunarclient/offline/multiver/overrides/ReplayMod-v1_8-2.6.14.jar"))
+    compileOnly(files("F:/CoffeeClient/replaymod/versions/1.8.9/build/libs/ReplayMod-v1_8-2.6.14.jar"))
 
     runtimeOnly("me.djtheredstoner:DevAuth-forge-legacy:1.2.1")
 }
 
-// Tasks:
 
 tasks.withType(JavaCompile::class) {
     options.encoding = "UTF-8"
