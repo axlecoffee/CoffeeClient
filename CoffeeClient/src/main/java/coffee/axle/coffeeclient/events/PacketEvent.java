@@ -9,6 +9,10 @@ public class PacketEvent extends Event {
     private final Packet<?> packet;
     private final boolean send;
 
+    public PacketEvent() {
+        this(null, false);
+    }
+
     public PacketEvent(Packet<?> packet, boolean send) {
         this.packet = packet;
         this.send = send;

@@ -5,6 +5,10 @@ import net.minecraftforge.fml.common.eventhandler.Event;
 public class UpdateEvent extends Event {
     private final boolean pre;
 
+    public UpdateEvent() {
+        this(false);
+    }
+
     public UpdateEvent(boolean pre) {
         this.pre = pre;
     }

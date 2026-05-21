@@ -9,6 +9,10 @@ public class KnockbackEvent extends Event {
     private double y;
     private double z;
 
+    public KnockbackEvent() {
+        this(0, 0, 0);
+    }
+
     public KnockbackEvent(double x, double y, double z) {
         this.x = x;
         this.y = y;
