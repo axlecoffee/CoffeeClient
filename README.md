@@ -1,3 +1,20 @@
+# CoffeeClient EOL
+
+As of June 12th, 2026:
+
+Unfortunately, Lunar Client has decided to remove 3rd party mod override support (which was originally added in 2022).
+This is most likely, in part, caused *by* CoffeeClient, as no one had publically done similar.
+
+Due to this - coffeeclient will not obtain updates at its current state.
+
+In the future, I may try to build an injection-based approach
+or something to do with wrappers/java args
+
+It was fun!
+
+- Axle, CoffeeClient - 2025-2026
+
+
 # CoffeeClient
 
 ![1779336918018](image/README/1779336918018.png)
