@@ -1,5 +1,16 @@
-coffeemods/
-coffee-loader.log
-.gradle/
+.idea/
+.vscode/
+run/
 build/
+bin/
+.gradle/
+*.class
+
+# old monorepo leftovers, kept on disk but no longer part of the repo
+coffeemods/
+replaymod/
 replaymod.bak/
+genesis-extracted/
+wtf-agent/
+coffee-loader.log
+
