@@ -17,6 +17,8 @@
     "client": [
         "MixinRunTick",
         "AccessorGuiContainer",
+        "MixinGuiContainer",
+        "MixinRightClickMouse",
         "IAccessorPlayerControllerMP",
         "MixinBlockRendererDispatcher",
         "MixinMinecraft",

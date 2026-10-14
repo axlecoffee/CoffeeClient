@@ -35,7 +35,7 @@ public class ModeProperty extends Property<Integer> {
 
     @Override
     public String formatValue() {
-        return getModeString();
+        return String.format("&9%s", getModeString());
     }
 
     @Override

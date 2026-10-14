@@ -13,6 +13,7 @@ import coffee.axle.coffeeclient.mixin.IAccessorEntity;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
+import net.minecraft.network.ThreadQuickExitException;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.network.play.server.S27PacketExplosion;
@@ -27,17 +28,18 @@ public class Velocity extends Feature {
     private boolean pendingExplosion = false;
     private boolean allowNext = true;
     private boolean jumpFlag = false;
-    private boolean reverseFlag = false;
-    private boolean delayActive = false;
+    private boolean reversePending = false;
+    private boolean bufferingVelocity = false;
+    private S12PacketEntityVelocity delayedVelocity = null;
+    private int delayTickCounter = 0;
 
     private boolean shouldJump = false;
     private int jumpCooldown = 0;
-    private int delayTickCounter = 0;
 
     public final ModeProperty mode = new ModeProperty("mode", 0,
             new String[] { "VANILLA", "JUMP", "DELAY", "REVERSE", "LEGITTest" });
-    public final IntProperty delayTicksProperty = new IntProperty("delay-ticks", 3, 1, 20);
-    public final IntProperty delayChance = new IntProperty("delay-chance", 100, 0, 100);
+    public final IntProperty delayTicksProperty = new IntProperty("delay-ticks", 3, 1, 20, this::showDelaySettings);
+    public final IntProperty delayChance = new IntProperty("delay-chance", 100, 0, 100, this::showDelaySettings);
     public final IntProperty chance = new IntProperty("chance", 100, 0, 100);
     public final IntProperty horizontal = new IntProperty("horizontal", 0, 0, 100);
     public final IntProperty vertical = new IntProperty("vertical", 100, 0, 100);
@@ -55,9 +57,21 @@ public class Velocity extends Feature {
                 || ((IAccessorEntity) mc.thePlayer).getIsInWeb();
     }
 
-    private boolean canDelay() {
-        
-        return mc.thePlayer.onGround;
+    private boolean showDelaySettings() {
+        return mode.getValue() == 2;
+    }
+
+    private void releaseDelayedVelocity() {
+        this.bufferingVelocity = false;
+        this.delayTickCounter = 0;
+        S12PacketEntityVelocity packet = this.delayedVelocity;
+        this.delayedVelocity = null;
+        if (packet != null && mc.getNetHandler() != null) {
+            try {
+                packet.processPacket(mc.getNetHandler());
+            } catch (ThreadQuickExitException ignored) {
+            }
+        }
     }
 
     @SubscribeEvent
@@ -85,7 +99,7 @@ public class Velocity extends Feature {
                 this.chanceCounter = this.chanceCounter % 100 + this.chance.getValue();
                 if (this.chanceCounter >= 100) {
                     this.jumpFlag = (this.mode.getValue() == 1 || this.mode.getValue() == 2) && event.getY() > 0.0;
-                    this.delayActive = this.mode.getValue() == 3;
+                    this.reversePending = this.mode.getValue() == 3;
                     if (this.horizontal.getValue() > 0) {
                         event.setX(event.getX() * (double) this.horizontal.getValue() / 100.0);
                         event.setZ(event.getZ() * (double) this.horizontal.getValue() / 100.0);
@@ -107,14 +121,13 @@ public class Velocity extends Feature {
     public void onUpdate(UpdateEvent event) {
         if (!event.isPost()) return;
 
-        if (this.reverseFlag && (this.canDelay() || this.isInLiquidOrWeb()
+        if (this.bufferingVelocity && (mc.thePlayer.onGround || this.isInLiquidOrWeb()
                 || this.delayTickCounter >= this.delayTicksProperty.getValue())) {
-            this.reverseFlag = false;
-            this.delayTickCounter = 0;
+            this.releaseDelayedVelocity();
         }
-        if (this.delayActive) {
+        if (this.reversePending) {
             MoveUtil.setSpeed(MoveUtil.getSpeed(), MoveUtil.getMoveYaw());
-            this.delayActive = false;
+            this.reversePending = false;
         }
 
         if (this.mode.getValue() == 4) {
@@ -139,7 +152,7 @@ public class Velocity extends Feature {
             }
         }
 
-        if (this.reverseFlag) {
+        if (this.bufferingVelocity) {
             this.delayTickCounter++;
         }
     }
@@ -163,16 +176,20 @@ public class Velocity extends Feature {
         if (event.getPacket() instanceof S12PacketEntityVelocity) {
             S12PacketEntityVelocity packet = (S12PacketEntityVelocity) event.getPacket();
             if (packet.getEntityID() == mc.thePlayer.getEntityId()) {
+                if (this.bufferingVelocity) {
+                    this.releaseDelayedVelocity();
+                }
                 if (this.mode.getValue() == 2
-                        && !this.reverseFlag
-                        && !this.canDelay()
+                        && !this.bufferingVelocity
+                        && !mc.thePlayer.onGround
                         && !this.isInLiquidOrWeb()
                         && !this.pendingExplosion
                         && (!this.allowNext || !this.fakeCheck.getValue())) {
                     this.delayChanceCounter = this.delayChanceCounter % 100 + this.delayChance.getValue();
                     if (this.delayChanceCounter >= 100) {
                         event.setCanceled(true);
-                        this.reverseFlag = true;
+                        this.delayedVelocity = packet;
+                        this.bufferingVelocity = true;
                         this.delayTickCounter = 0;
                         return;
                     }
@@ -212,13 +229,15 @@ public class Velocity extends Feature {
 
     @Override
     public void onDisabled() {
+        if (this.bufferingVelocity) {
+            this.releaseDelayedVelocity();
+        }
         this.pendingExplosion = false;
         this.allowNext = true;
         this.shouldJump = false;
         this.jumpCooldown = 0;
         this.delayTickCounter = 0;
-        this.reverseFlag = false;
-        this.delayActive = false;
+        this.reversePending = false;
         this.jumpFlag = false;
     }
 

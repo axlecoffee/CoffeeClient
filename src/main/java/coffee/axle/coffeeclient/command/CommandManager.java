@@ -7,6 +7,13 @@
 package coffee.axle.coffeeclient.command;
 
 import coffee.axle.coffeeclient.CoffeeClient;
+import coffee.axle.coffeeclient.command.commands.BindCommand;
+import coffee.axle.coffeeclient.command.commands.CoffeeCommand;
+import coffee.axle.coffeeclient.command.commands.ConfigCommand;
+import coffee.axle.coffeeclient.command.commands.FeatureCommand;
+import coffee.axle.coffeeclient.command.commands.HideCommand;
+import coffee.axle.coffeeclient.command.commands.ShowCommand;
+import coffee.axle.coffeeclient.command.commands.ToggleCommand;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.gui.GuiTextField;
@@ -51,6 +58,14 @@ public class CommandManager {
 				CoffeeClient.LOGGER.error("Failed to get GuiChat sentHistoryCursor", ex);
 			}
 		}
+
+		commands.add(new CoffeeCommand());
+		commands.add(new BindCommand());
+		commands.add(new ToggleCommand());
+		commands.add(new ConfigCommand());
+		commands.add(new FeatureCommand());
+		commands.add(new HideCommand());
+		commands.add(new ShowCommand());
 	}
 
 	private void addToHistory(String command) {

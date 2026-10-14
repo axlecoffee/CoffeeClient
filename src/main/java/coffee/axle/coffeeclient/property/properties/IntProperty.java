@@ -33,7 +33,7 @@ public class IntProperty extends Property<Integer> {
 
     @Override
     public String formatValue() {
-        return String.valueOf(getValue());
+        return String.format("&e%d", getValue());
     }
 
     @Override

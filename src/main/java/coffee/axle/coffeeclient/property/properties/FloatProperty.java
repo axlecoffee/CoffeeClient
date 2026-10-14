@@ -33,7 +33,7 @@ public class FloatProperty extends Property<Float> {
 
     @Override
     public String formatValue() {
-        return String.format("%.2f", getValue());
+        return String.format("&6%.2f", getValue());
     }
 
     @Override

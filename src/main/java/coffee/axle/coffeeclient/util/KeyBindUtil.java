@@ -62,6 +62,7 @@ public class KeyBindUtil {
 	public static void updateKeyState(int keyCode) {
 		boolean currentState = isKeyDown(keyCode);
 		keyStates.put(keyCode, currentState);
+		KeyBinding.setKeyBindState(keyCode, currentState);
 	}
 
 	public static void setKeyBindState(int keyCode, boolean pressed) {

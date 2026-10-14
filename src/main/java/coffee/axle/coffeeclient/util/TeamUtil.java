@@ -7,6 +7,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityArmorStand;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreObjective;
 import net.minecraft.scoreboard.ScorePlayerTeam;
 
 import java.awt.Color;
@@ -60,6 +62,9 @@ public class TeamUtil {
         if (playerInfo == null) {
             return true;
         }
+        if (!isHypixelScoreboard()) {
+            return false;
+        }
         if (player.getName().startsWith("\u00a7k")) {
             return player.isInvisible();
         }
@@ -67,11 +72,34 @@ public class TeamUtil {
             return true;
         }
         ScorePlayerTeam playerTeam = playerInfo.getPlayerTeam();
-        if (playerTeam == null)
+        if (playerTeam != null) {
+            if (playerTeam.getTeamName().isEmpty() && playerTeam.getColorPrefix().equals("\u00a7c")) {
+                return true;
+            }
+            if (!playerTeam.getColorPrefix().isEmpty()) {
+                return false;
+            }
+        }
+        return playerInfo.getGameProfile().getId().version() == 2;
+    }
+
+    // myau checks two exact garbled sidebar strings for this, strip codes instead
+    private static boolean isHypixelScoreboard() {
+        if (mc.theWorld == null) {
             return false;
-        if (!playerTeam.getTeamName().isEmpty())
+        }
+        ScoreObjective objective = mc.theWorld.getScoreboard().getObjectiveInDisplaySlot(1);
+        if (objective == null) {
             return false;
-        return playerTeam.getColorPrefix().equals("\u00a7c");
+        }
+        String firstLine = null;
+        for (Score score : mc.theWorld.getScoreboard().getSortedScores(objective)) {
+            String line = ScorePlayerTeam.formatPlayerName(
+                    mc.theWorld.getScoreboard().getPlayersTeam(score.getPlayerName()), score.getPlayerName());
+            firstLine = line;
+            break;
+        }
+        return firstLine != null && firstLine.replaceAll("\u00a7.", "").contains("hypixel");
     }
 
     public static Color getTeamColor(EntityPlayer player, float alpha) {

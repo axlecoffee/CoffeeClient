@@ -36,6 +36,7 @@ public class AimAssist extends Feature {
     public final FloatProperty range = new FloatProperty("range", 4.5F, 3.0F, 8.0F);
     public final IntProperty fov = new IntProperty("fov", 90, 30, 360);
     public final BooleanProperty requirePress = new BooleanProperty("require-press", true);
+    public final BooleanProperty allowMining = new BooleanProperty("allow-mining", true);
     public final BooleanProperty weaponsOnly = new BooleanProperty("weapons-only", true);
     public final BooleanProperty allowTools = new BooleanProperty("allow-tools", false, weaponsOnly::getValue);
     public final BooleanProperty playersOnly = new BooleanProperty("players-only", true);
@@ -51,9 +52,14 @@ public class AimAssist extends Feature {
 
     private final RotationState rotationState = RotationState.getInstance();
     private AimAssistRotation rotation;
+    private EntityLivingBase currentTarget;
 
     public AimAssist() {
         super("AimAssist", false);
+    }
+
+    public EntityLivingBase getCurrentTarget() {
+        return currentTarget;
     }
 
     @Override
@@ -68,6 +74,7 @@ public class AimAssist extends Feature {
     @Override
     public void onDisabled() {
         rotation = null;
+        currentTarget = null;
     }
 
     private boolean isLookingAtBlock() {
@@ -93,6 +100,7 @@ public class AimAssist extends Feature {
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (!isEnabled() || mc.thePlayer == null || mc.theWorld == null || mc.currentScreen != null) {
+            currentTarget = null;
             return;
         }
 
@@ -100,17 +108,24 @@ public class AimAssist extends Feature {
             return;
         }
 
+        currentTarget = findTarget();
+
         if (weaponsOnly.getValue() && !ItemUtil.hasRawUnbreakingEnchant()) {
             if (!allowTools.getValue() || !ItemUtil.isHoldingTool()) {
                 return;
             }
         }
 
-        if (requirePress.getValue() && !isAttackKeyDown()) {
+        boolean attackPressed = isAttackKeyDown();
+        if (allowMining.getValue() && attackPressed && isLookingAtBlock()) {
             return;
         }
 
-        if (isAttackKeyDown() && isLookingAtBlock()) {
+        if (requirePress.getValue() && !attackPressed) {
+            return;
+        }
+
+        if (currentTarget == null || RotationUtil.distanceToEntity(currentTarget) <= 0.0) {
             return;
         }
 
@@ -118,6 +133,10 @@ public class AimAssist extends Feature {
         rotationState.updatePing();
         syncRotationSettings();
 
+        applyRotation(currentTarget);
+    }
+
+    private EntityLivingBase findTarget() {
         List<EntityLivingBase> inRange = mc.theWorld.loadedEntityList.stream()
                 .filter(entity -> entity instanceof EntityLivingBase)
                 .map(entity -> (EntityLivingBase) entity)
@@ -126,19 +145,14 @@ public class AimAssist extends Feature {
                 .collect(Collectors.toList());
 
         if (inRange.isEmpty()) {
-            return;
+            return null;
         }
 
         if (inRange.stream().anyMatch(this::isInReach)) {
             inRange.removeIf(e -> !isInReach(e));
         }
 
-        EntityLivingBase target = inRange.get(0);
-        if (RotationUtil.distanceToEntity(target) <= 0.0) {
-            return;
-        }
-
-        applyRotation(target);
+        return inRange.get(0);
     }
 
     private void applyRotation(EntityLivingBase target) {
@@ -191,9 +205,9 @@ public class AimAssist extends Feature {
             return false;
         EntityLivingBase living = (EntityLivingBase) entity;
 
-        if (living == mc.thePlayer)
+        if (living == mc.thePlayer || living == mc.thePlayer.ridingEntity)
             return false;
-        if (living == mc.thePlayer.ridingEntity)
+        if (living == mc.getRenderViewEntity() || living == mc.getRenderViewEntity().ridingEntity)
             return false;
         if (living.deathTime > 0)
             return false;
@@ -203,21 +217,21 @@ public class AimAssist extends Feature {
         if (!targetInvisible.getValue() && living.isInvisible())
             return false;
 
+        if (RotationUtil.distanceToEntity(living) > range.getValue())
+            return false;
+        if (RotationUtil.angleToEntity(living) > (float) fov.getValue())
+            return false;
+        if (RotationUtil.rayTrace(living) != null)
+            return false;
+
         if (living instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) living;
+            if (TeamUtil.isFriend(player))
+                return false;
             if (team.getValue() && TeamUtil.isSameTeam(player))
                 return false;
-            if (botCheck.getValue() && TeamUtil.isBot(player))
-                return false;
+            return !botCheck.getValue() || !TeamUtil.isBot(player);
         }
-
-        double distance = RotationUtil.distanceToEntity(living);
-        if (distance > range.getValue())
-            return false;
-
-        float angle = RotationUtil.angleToEntity(living);
-        if (angle > (float) fov.getValue())
-            return false;
 
         return true;
     }
