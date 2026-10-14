@@ -19,19 +19,13 @@ import coffee.axle.coffeeclient.feature.world.*;
 import coffee.axle.coffeeclient.property.Property;
 import coffee.axle.coffeeclient.property.PropertyManager;
 import coffee.axle.coffeeclient.util.Logger;
-import com.replaymod.coffeeclient.hook.CoffeeMod;
-import com.replaymod.coffeeclient.hook.event.CLInitEvent;
-import com.replaymod.coffeeclient.hook.event.CLMixinInitEvent;
-import com.replaymod.coffeeclient.hook.event.CLPostInitEvent;
-import com.replaymod.coffeeclient.hook.event.CLPreInitEvent;
-import com.replaymod.coffeeclient.hook.event.CLReplayModInitEvent;
 import net.minecraftforge.common.MinecraftForge;
+
 import org.apache.logging.log4j.LogManager;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-@CoffeeMod(name = "CoffeeClient", version = "1.0.0")
 public class CoffeeClient {
 
     public static final String CLIENT_NAME = "&7[&bCoffeeClient&7]&r ";
@@ -43,15 +37,7 @@ public class CoffeeClient {
 
     private static boolean initialized = false;
 
-    @CoffeeMod.EventHandler
-    public void onMixinInit(CLMixinInitEvent event) {
-        Logger.info("[CoffeeClient] Mixin init — "
-                + event.getLoadedMods() + " mod(s), "
-                + event.getRegisteredMixins() + " mixin(s)");
-    }
-
-    @CoffeeMod.EventHandler
-    public void onPreInit(CLPreInitEvent event) {
+    public static void init() {
         if (initialized) return;
         LOGGER.info("Initializing CoffeeClient...");
 
@@ -70,21 +56,6 @@ public class CoffeeClient {
 
         initialized = true;
         LOGGER.info("CoffeeClient initialized successfully!");
-    }
-
-    @CoffeeMod.EventHandler
-    public void onReplayModInit(CLReplayModInitEvent event) {
-        LOGGER.info("[CoffeeClient] ReplayMod init");
-    }
-
-    @CoffeeMod.EventHandler
-    public void onInit(CLInitEvent event) {
-        LOGGER.info("[CoffeeClient] Init");
-    }
-
-    @CoffeeMod.EventHandler
-    public void onPostInit(CLPostInitEvent event) {
-        LOGGER.info("[CoffeeClient] Post-init — fully loaded");
     }
 
     private static void registerFeatures() {

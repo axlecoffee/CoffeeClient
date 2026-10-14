@@ -17,6 +17,11 @@ public class MixinMinecraft {
     @Shadow
     private int leftClickCounter;
 
+    @Inject(method = "startGame", at = @At("TAIL"))
+    private void onStartGame(CallbackInfo ci) {
+        CoffeeClient.init();
+    }
+
     @Inject(method = "clickMouse", at = @At("HEAD"), cancellable = true)
     private void onClickMouse(CallbackInfo ci) {
         if (CoffeeClient.featureManager != null) {
