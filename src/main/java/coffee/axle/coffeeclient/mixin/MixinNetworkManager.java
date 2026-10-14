@@ -1,6 +1,7 @@
 package coffee.axle.coffeeclient.mixin;
 
 import coffee.axle.coffeeclient.events.PacketEvent;
+import coffee.axle.coffeeclient.util.IncomingPacketBuffer;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.Packet;
@@ -19,6 +20,10 @@ public class MixinNetworkManager {
             PacketEvent event = new PacketEvent(packet, false);
             MinecraftForge.EVENT_BUS.post(event);
             if (event.isCanceled()) {
+                ci.cancel();
+                return;
+            }
+            if (IncomingPacketBuffer.buffer(packet)) {
                 ci.cancel();
             }
         }

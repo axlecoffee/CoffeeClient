@@ -10,7 +10,9 @@ import coffee.axle.coffeeclient.CoffeeClient;
 import coffee.axle.coffeeclient.command.commands.BindCommand;
 import coffee.axle.coffeeclient.command.commands.CoffeeCommand;
 import coffee.axle.coffeeclient.command.commands.ConfigCommand;
+import coffee.axle.coffeeclient.command.commands.EnemyCommand;
 import coffee.axle.coffeeclient.command.commands.FeatureCommand;
+import coffee.axle.coffeeclient.command.commands.FriendCommand;
 import coffee.axle.coffeeclient.command.commands.HideCommand;
 import coffee.axle.coffeeclient.command.commands.ShowCommand;
 import coffee.axle.coffeeclient.command.commands.ToggleCommand;
@@ -66,6 +68,8 @@ public class CommandManager {
 		commands.add(new FeatureCommand());
 		commands.add(new HideCommand());
 		commands.add(new ShowCommand());
+		commands.add(new FriendCommand());
+		commands.add(new EnemyCommand());
 	}
 
 	private void addToHistory(String command) {

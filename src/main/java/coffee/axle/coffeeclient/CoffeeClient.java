@@ -4,6 +4,7 @@ import coffee.axle.coffeeclient.command.CommandManager;
 import coffee.axle.coffeeclient.config.Config;
 import coffee.axle.coffeeclient.feature.FeatureManager;
 import coffee.axle.coffeeclient.property.PropertyManager;
+import coffee.axle.coffeeclient.util.SocialList;
 import net.minecraftforge.common.MinecraftForge;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +31,8 @@ public class CoffeeClient {
         MinecraftForge.EVENT_BUS.register(featureManager);
         MinecraftForge.EVENT_BUS.register(commandManager);
 
+        SocialList.friends.load();
+        SocialList.enemies.load();
         new Config("default", false).load();
 
         initialized = true;

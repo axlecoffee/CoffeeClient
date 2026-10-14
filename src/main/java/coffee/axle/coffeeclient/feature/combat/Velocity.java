@@ -8,12 +8,12 @@ import coffee.axle.coffeeclient.feature.Feature;
 import coffee.axle.coffeeclient.property.properties.BooleanProperty;
 import coffee.axle.coffeeclient.property.properties.IntProperty;
 import coffee.axle.coffeeclient.property.properties.ModeProperty;
+import coffee.axle.coffeeclient.util.IncomingPacketBuffer;
 import coffee.axle.coffeeclient.util.MoveUtil;
 import coffee.axle.coffeeclient.mixin.IAccessorEntity;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
-import net.minecraft.network.ThreadQuickExitException;
 import net.minecraft.network.play.server.S12PacketEntityVelocity;
 import net.minecraft.network.play.server.S19PacketEntityStatus;
 import net.minecraft.network.play.server.S27PacketExplosion;
@@ -30,7 +30,6 @@ public class Velocity extends Feature {
     private boolean jumpFlag = false;
     private boolean reversePending = false;
     private boolean bufferingVelocity = false;
-    private S12PacketEntityVelocity delayedVelocity = null;
     private int delayTickCounter = 0;
 
     private boolean shouldJump = false;
@@ -62,16 +61,9 @@ public class Velocity extends Feature {
     }
 
     private void releaseDelayedVelocity() {
+        IncomingPacketBuffer.disable();
         this.bufferingVelocity = false;
         this.delayTickCounter = 0;
-        S12PacketEntityVelocity packet = this.delayedVelocity;
-        this.delayedVelocity = null;
-        if (packet != null && mc.getNetHandler() != null) {
-            try {
-                packet.processPacket(mc.getNetHandler());
-            } catch (ThreadQuickExitException ignored) {
-            }
-        }
     }
 
     @SubscribeEvent
@@ -121,7 +113,7 @@ public class Velocity extends Feature {
     public void onUpdate(UpdateEvent event) {
         if (!event.isPost()) return;
 
-        if (this.bufferingVelocity && (mc.thePlayer.onGround || this.isInLiquidOrWeb()
+        if (this.bufferingVelocity && (mc.thePlayer.isDead || mc.thePlayer.onGround || this.isInLiquidOrWeb()
                 || this.delayTickCounter >= this.delayTicksProperty.getValue())) {
             this.releaseDelayedVelocity();
         }
@@ -187,8 +179,9 @@ public class Velocity extends Feature {
                         && (!this.allowNext || !this.fakeCheck.getValue())) {
                     this.delayChanceCounter = this.delayChanceCounter % 100 + this.delayChance.getValue();
                     if (this.delayChanceCounter >= 100) {
+                        IncomingPacketBuffer.enable();
+                        IncomingPacketBuffer.offer(packet);
                         event.setCanceled(true);
-                        this.delayedVelocity = packet;
                         this.bufferingVelocity = true;
                         this.delayTickCounter = 0;
                         return;

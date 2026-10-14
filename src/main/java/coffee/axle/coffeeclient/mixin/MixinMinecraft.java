@@ -1,6 +1,7 @@
 package coffee.axle.coffeeclient.mixin;
 
 import coffee.axle.coffeeclient.CoffeeClient;
+import coffee.axle.coffeeclient.events.BlockClickEvent;
 import coffee.axle.coffeeclient.events.LeftClickMouseEvent;
 import coffee.axle.coffeeclient.feature.combat.NoHitDelay;
 import net.minecraft.client.Minecraft;
@@ -31,6 +32,15 @@ public class MixinMinecraft {
             }
         }
         LeftClickMouseEvent event = new LeftClickMouseEvent();
+        MinecraftForge.EVENT_BUS.post(event);
+        if (event.isCanceled()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "sendClickBlockToController", at = @At("HEAD"), cancellable = true)
+    private void onSendClickBlockToController(CallbackInfo ci) {
+        BlockClickEvent event = new BlockClickEvent();
         MinecraftForge.EVENT_BUS.post(event);
         if (event.isCanceled()) {
             ci.cancel();

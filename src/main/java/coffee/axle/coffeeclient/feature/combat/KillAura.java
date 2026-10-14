@@ -8,9 +8,12 @@ package coffee.axle.coffeeclient.feature.combat;
 
 import com.google.common.base.CaseFormat;
 import coffee.axle.coffeeclient.CoffeeClient;
+import coffee.axle.coffeeclient.events.BlockClickEvent;
 import coffee.axle.coffeeclient.events.LeftClickMouseEvent;
 import coffee.axle.coffeeclient.events.MoveInputEvent;
 import coffee.axle.coffeeclient.events.PacketEvent;
+import coffee.axle.coffeeclient.events.RightClickMouseEvent;
+import coffee.axle.coffeeclient.events.StopUsingItemEvent;
 import coffee.axle.coffeeclient.events.UpdateEvent;
 import coffee.axle.coffeeclient.feature.Feature;
 import coffee.axle.coffeeclient.feature.render.HUD;
@@ -326,6 +329,9 @@ public class KillAura extends Feature {
             if (TeamUtil.isFriend(player)) {
                 return false;
             }
+            if (TeamUtil.isEnemy(player)) {
+                return true;
+            }
             if (teams.getValue() && TeamUtil.isSameTeam(player)) {
                 return false;
             }
@@ -375,7 +381,7 @@ public class KillAura extends Feature {
     }
 
     private boolean isEnemyPlayer(EntityLivingBase entity) {
-        return entity instanceof EntityPlayer && TeamUtil.isTarget((EntityPlayer) entity);
+        return entity instanceof EntityPlayer && TeamUtil.isEnemy((EntityPlayer) entity);
     }
 
     private boolean isAutoBlockSettingsVisible() {
@@ -766,6 +772,37 @@ public class KillAura extends Feature {
         }
         if (isEnabled() && canRunCombat() && currentTarget != null
                 && isWithinSwingRange(currentTarget.distance)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onRightClick(RightClickMouseEvent event) {
+        if (autoBlockActive) {
+            event.setCanceled(true);
+            return;
+        }
+        if (isEnabled() && canRunCombat() && currentTarget != null
+                && isWithinSwingRange(currentTarget.distance)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onBlockClick(BlockClickEvent event) {
+        if (autoBlockActive) {
+            event.setCanceled(true);
+            return;
+        }
+        if (isEnabled() && canRunCombat() && currentTarget != null
+                && isWithinSwingRange(currentTarget.distance)) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onStopUsingItem(StopUsingItemEvent event) {
+        if (autoBlockActive) {
             event.setCanceled(true);
         }
     }

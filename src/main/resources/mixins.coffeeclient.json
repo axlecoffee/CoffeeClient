@@ -17,7 +17,10 @@
     "client": [
         "MixinRunTick",
         "AccessorGuiContainer",
+        "AccessorEntityRenderer",
+        "MixinEntityRenderer",
         "MixinGuiContainer",
+        "MixinPlayerControllerMP",
         "MixinRightClickMouse",
         "IAccessorPlayerControllerMP",
         "MixinBlockRendererDispatcher",
@@ -25,8 +28,7 @@
         "MixinRendererLivingEntity",
         "AccessorRenderManager",
         "IAccessorMinecraft",
-        "IAccessorC0DPacketCloseWindow",
-        "AccessorEntityRenderer"
+        "IAccessorC0DPacketCloseWindow"
     ],
     "injectors": {
         "defaultRequire": 0

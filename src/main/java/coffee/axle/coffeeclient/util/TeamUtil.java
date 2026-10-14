@@ -40,11 +40,12 @@ public class TeamUtil {
         return entityLivingBase.getHealth() * (20.0f / (float) entityLivingBase.getTotalArmorValue());
     }
 
-    /**
-     * Checks if the player is a friend (currently always false — no friend list implemented).
-     */
     public static boolean isFriend(EntityPlayer player) {
-        return false;
+        return SocialList.friends.contains(player.getName());
+    }
+
+    public static boolean isEnemy(EntityPlayer player) {
+        return SocialList.enemies.contains(player.getName());
     }
 
     /**

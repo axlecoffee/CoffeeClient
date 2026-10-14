@@ -1,5 +1,6 @@
 package coffee.axle.coffeeclient.feature.combat;
 
+import coffee.axle.coffeeclient.CoffeeClient;
 import coffee.axle.coffeeclient.feature.Feature;
 import coffee.axle.coffeeclient.property.properties.BooleanProperty;
 import coffee.axle.coffeeclient.property.properties.FloatProperty;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 
 public class AimAssist extends Feature {
     private static final Minecraft mc = Minecraft.getMinecraft();
+    private static final long ATTACK_COOLDOWN_MILLIS = 350L;
 
     public final FloatProperty hSpeed = new FloatProperty("horizontal-speed", 3.0F, 0.0F, 10.0F);
     public final FloatProperty vSpeed = new FloatProperty("vertical-speed", 0.0F, 0.0F, 10.0F);
@@ -53,6 +55,7 @@ public class AimAssist extends Feature {
     private final RotationState rotationState = RotationState.getInstance();
     private AimAssistRotation rotation;
     private EntityLivingBase currentTarget;
+    private long lastAttackAt;
 
     public AimAssist() {
         super("AimAssist", false);
@@ -108,6 +111,12 @@ public class AimAssist extends Feature {
             return;
         }
 
+        boolean attackPressed = isAttackKeyDown();
+        AutoClicker autoClicker = (AutoClicker) CoffeeClient.featureManager.getFeature(AutoClicker.class);
+        if (attackPressed && !autoClicker.isEnabled()) {
+            lastAttackAt = System.currentTimeMillis();
+        }
+
         currentTarget = findTarget();
 
         if (weaponsOnly.getValue() && !ItemUtil.hasRawUnbreakingEnchant()) {
@@ -116,12 +125,12 @@ public class AimAssist extends Feature {
             }
         }
 
-        boolean attackPressed = isAttackKeyDown();
         if (allowMining.getValue() && attackPressed && isLookingAtBlock()) {
             return;
         }
 
-        if (requirePress.getValue() && !attackPressed) {
+        if (requirePress.getValue() && !attackPressed
+                && System.currentTimeMillis() - lastAttackAt >= ATTACK_COOLDOWN_MILLIS) {
             return;
         }
 
@@ -228,6 +237,8 @@ public class AimAssist extends Feature {
             EntityPlayer player = (EntityPlayer) living;
             if (TeamUtil.isFriend(player))
                 return false;
+            if (TeamUtil.isEnemy(player))
+                return true;
             if (team.getValue() && TeamUtil.isSameTeam(player))
                 return false;
             return !botCheck.getValue() || !TeamUtil.isBot(player);
