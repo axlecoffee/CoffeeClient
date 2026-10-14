@@ -47,7 +47,6 @@ public class FeatureManager {
         registerFeature(new BedTracker());
         registerFeature(new Chester());
         registerFeature(new ClickOutOfContainers());
-        registerFeature(new AimAssistShowTarget());
         registerFeature(new Test());
     }
 

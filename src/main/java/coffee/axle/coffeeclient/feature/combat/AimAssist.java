@@ -2,6 +2,7 @@ package coffee.axle.coffeeclient.feature.combat;
 
 import coffee.axle.coffeeclient.CoffeeClient;
 import coffee.axle.coffeeclient.feature.Feature;
+import coffee.axle.coffeeclient.feature.render.HUD;
 import coffee.axle.coffeeclient.property.properties.BooleanProperty;
 import coffee.axle.coffeeclient.property.properties.FloatProperty;
 import coffee.axle.coffeeclient.property.properties.IntProperty;
@@ -11,6 +12,7 @@ import coffee.axle.coffeeclient.rotation.RotationMath;
 import coffee.axle.coffeeclient.rotation.RotationState;
 import coffee.axle.coffeeclient.util.ItemUtil;
 import coffee.axle.coffeeclient.util.KeyBindUtil;
+import coffee.axle.coffeeclient.util.RenderUtil;
 import coffee.axle.coffeeclient.util.RotationUtil;
 import coffee.axle.coffeeclient.util.TeamUtil;
 
@@ -21,9 +23,11 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
+import java.awt.Color;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,8 +55,13 @@ public class AimAssist extends Feature {
     public final BooleanProperty pingComp = new BooleanProperty("ping-comp", false);
     public final FloatProperty contractionMin = new FloatProperty("contraction-min", 0.03F, 0.01F, 0.15F);
     public final FloatProperty contractionMax = new FloatProperty("contraction-max", 0.22F, 0.10F, 0.30F);
+    public final ModeProperty showTarget = new ModeProperty("show-target", 1,
+            new String[] { "NONE", "DEFAULT", "HUD", "BOX" });
+    public final FloatProperty boxOutlineWidth = new FloatProperty("target-box-width", 2.0F, 1.0F, 5.0F, this::isBoxMode);
 
     private final RotationState rotationState = RotationState.getInstance();
+    private final Color hurtColor = new Color(16733525);
+    private final Color normalColor = new Color(5635925);
     private AimAssistRotation rotation;
     private EntityLivingBase currentTarget;
     private long lastAttackAt;
@@ -119,10 +128,8 @@ public class AimAssist extends Feature {
 
         currentTarget = findTarget();
 
-        if (weaponsOnly.getValue() && !ItemUtil.hasRawUnbreakingEnchant()) {
-            if (!allowTools.getValue() || !ItemUtil.isHoldingTool()) {
-                return;
-            }
+        if (!hasRequiredWeapon()) {
+            return;
         }
 
         if (allowMining.getValue() && attackPressed && isLookingAtBlock()) {
@@ -207,6 +214,56 @@ public class AimAssist extends Feature {
         mc.thePlayer.rotationYaw += (rotations[0] - mc.thePlayer.rotationYaw) * 0.1f * yaw;
         mc.thePlayer.rotationPitch += (rotations[1] - mc.thePlayer.rotationPitch) * 0.1f * pitch;
         mc.thePlayer.rotationPitch = MathHelper.clamp_float(mc.thePlayer.rotationPitch, -90.0f, 90.0f);
+    }
+
+    @SubscribeEvent
+    public void onRenderWorld(RenderWorldLastEvent event) {
+        int mode = showTarget.getValue();
+        if (!isEnabled() || mode == 0) {
+            return;
+        }
+        if (currentTarget == null || currentTarget.isDead || currentTarget.getHealth() <= 0.0F) {
+            return;
+        }
+        if (!hasRequiredWeapon()) {
+            return;
+        }
+
+        Color color;
+        if (mode == 1 || mode == 3) {
+            color = currentTarget.hurtTime > 0 ? hurtColor : normalColor;
+        } else {
+            HUD hud = (HUD) CoffeeClient.featureManager.getFeature(HUD.class);
+            color = hud != null ? hud.getColor(System.currentTimeMillis()) : normalColor;
+        }
+
+        double x = RenderUtil.interpolate(currentTarget.posX, currentTarget.lastTickPosX, event.partialTicks);
+        double y = RenderUtil.interpolate(currentTarget.posY, currentTarget.lastTickPosY, event.partialTicks);
+        double z = RenderUtil.interpolate(currentTarget.posZ, currentTarget.lastTickPosZ, event.partialTicks);
+        AxisAlignedBB box = currentTarget.getEntityBoundingBox()
+                .expand(0.1F, 0.1F, 0.1F)
+                .offset(x - currentTarget.posX, y - currentTarget.posY, z - currentTarget.posZ)
+                .offset(-mc.getRenderManager().viewerPosX,
+                        -mc.getRenderManager().viewerPosY,
+                        -mc.getRenderManager().viewerPosZ);
+
+        RenderUtil.enableRenderState();
+        if (mode == 3) {
+            RenderUtil.drawBoundingBox(box, color, boxOutlineWidth.getValue());
+        } else {
+            RenderUtil.drawFilledBox(box, color.getRed(), color.getGreen(), color.getBlue(), 38);
+        }
+        RenderUtil.disableRenderState();
+    }
+
+    private boolean hasRequiredWeapon() {
+        return !weaponsOnly.getValue()
+                || ItemUtil.hasRawUnbreakingEnchant()
+                || (allowTools.getValue() && ItemUtil.isHoldingTool());
+    }
+
+    private boolean isBoxMode() {
+        return showTarget.getValue() == 3;
     }
 
     private boolean isValidTarget(Entity entity) {
